@@ -1,0 +1,82 @@
+# Development stack.
+#
+# MongoDB runs as a SINGLE-NODE REPLICA SET, not standalone. This is not
+# optional: multi-document transactions are unavailable on a standalone mongod,
+# and every stock-moving operation in this system depends on them. Running
+# standalone in development means transactions silently do nothing until you
+# discover it in Phase 3.
+services:
+  mongo:
+    image: mongo:7
+    container_name: ims-mongo
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # Idempotent: initiates the replica set on first boot, reports ok after.
+      test: >
+        mongosh --quiet --eval "
+          try { rs.status().ok }
+          catch (e) {
+            rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }).ok
+          }"
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+    container_name: ims-backend
+    env_file: ./backend/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/ims?replicaSet=rs0&directConnection=true
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend-storage:/app/storage
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: npm run dev
+
+  worker:
+    build:
+      context: ./backend
+      target: development
+    container_name: ims-worker
+    env_file: ./backend/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/ims?replicaSet=rs0&directConnection=true
+      PROCESS_ROLE: worker
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: npm run worker:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: ims-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host
+
+volumes:
+  mongo-data:
+  backend-storage:

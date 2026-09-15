@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+backend/storage/*
+!backend/storage/.gitkeep
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

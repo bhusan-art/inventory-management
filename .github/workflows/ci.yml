@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — lint & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # Single-node replica set. The GitHub Actions service-container syntax
+      # cannot pass `--replSet`, so we run mongod ourselves in a step below
+      # rather than as a service.
+      dummy:
+        image: alpine
+        options: --entrypoint /bin/true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start MongoDB replica set
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7 \
+            --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            if docker exec mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec mongo mongosh --quiet --eval \
+            "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+          for i in $(seq 1 30); do
+            if docker exec mongo mongosh --quiet --eval 'rs.status().ok' | grep -q 1; then
+              echo "Replica set ready"; break
+            fi
+            sleep 2
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - name: Test
+        run: npm test -- --coverage
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/ims_test?replicaSet=rs0&directConnection=true
+          JWT_SECRET: ci-secret-value-not-for-production
+          JWT_REFRESH_SECRET: ci-refresh-secret-not-for-production
+
+  frontend:
+    name: Frontend — lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
