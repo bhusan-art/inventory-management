@@ -3,7 +3,31 @@ import env from './env.js';
 import logger from './logger.js';
 
 mongoose.set('strictQuery', true);
-mongoose.set('sanitizeFilter', true); // blocks operator injection via user-supplied filters
+
+/**
+ * NOTE: `sanitizeFilter` is deliberately NOT enabled globally.
+ *
+ * It wraps any filter value containing `$` keys in `$eq`, which neutralises
+ * operator injection from user input — but it cannot distinguish user input
+ * from a query a developer wrote, so it breaks every legitimate operator too:
+ *
+ *   { _id: { $nin: [...] } }              → { _id: { $eq: { $nin: [...] } } }
+ *   { availableQuantity: { $gte: qty } }  → { availableQuantity: { $eq: { $gte: qty } } }
+ *
+ * The second one is the guarded atomic update that prevents negative stock.
+ * Under this setting it would stop matching silently, and every stock
+ * decrement would fail without an error anyone could trace.
+ *
+ * Mongoose's answer is to mark trusted queries with `mongoose.trusted()` at
+ * every call site. That trades a loud failure for a silent one: forget it once
+ * in three years of development and you get a query that quietly returns
+ * nothing.
+ *
+ * Injection is instead blocked at the boundary where untrusted input becomes a
+ * filter — `sanitizeUserFilter` in validators/common.schema.js, applied by the
+ * list-query schema. Filters written in service code are trusted because they
+ * are code, not input.
+ */
 
 let replicaSetVerified = false;
 
