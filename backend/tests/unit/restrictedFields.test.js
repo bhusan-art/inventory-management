@@ -2,9 +2,17 @@ import mongoose from 'mongoose';
 import { RESTRICTED_FIELDS, permissionForQueryKey, deniedRestrictedFields, permittedRestrictedFields } from '../../src/constants/restrictedFields.js';
 import { isKnownPermission } from '../../src/constants/permissions.js';
 import '../../src/models/User.js';
+import '../../src/models/Vendor.js';
+import '../../src/models/Customer.js';
 
-/** Models named in the registry that Phase 2 will introduce. */
-const PENDING_MODELS = ['Vendor', 'Customer'];
+/**
+ * Models named in the registry that a later phase will introduce.
+ *
+ * Emptied in Phase 2: Vendor and Customer now exist, so both are held to the
+ * registry↔schema check below. The third test in this file is what forced
+ * that — it fails as soon as an exempted model is registered.
+ */
+const PENDING_MODELS = [];
 
 /**
  * Registry ↔ schema consistency.

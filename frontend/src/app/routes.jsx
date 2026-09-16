@@ -3,6 +3,9 @@ import { useSelector } from 'react-redux';
 import LoginPage from '../features/auth/LoginPage.jsx';
 import ChangePasswordPage from '../features/auth/ChangePasswordPage.jsx';
 import DashboardPage from '../features/dashboard/DashboardPage.jsx';
+import AppLayout from '../layouts/AppLayout.jsx';
+import MasterListPage from '../features/master/MasterListPage.jsx';
+import { MASTER_CONFIGS } from '../features/master/masterConfig.js';
 
 /**
  * Route protection.
@@ -38,12 +41,38 @@ function Protected({ permission, children }) {
   return children;
 }
 
+/** Page-level guard for routes nested inside the authenticated layout. */
+function RequirePermission({ permission, children }) {
+  const { permissions } = useSelector((s) => s.auth);
+  if (permission && !permissions.includes(permission)) {
+    return (
+      <p className="text-sm text-slate-600">You do not have permission to view this page.</p>
+    );
+  }
+  return children;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
-      <Route path="/" element={<Protected><DashboardPage /></Protected>} />
+      <Route element={<Protected><AppLayout /></Protected>}>
+        <Route path="/" element={<DashboardPage />} />
+        {/* One route per master entity, generated from the same config that
+            drives the sidebar and the columns. */}
+        {Object.entries(MASTER_CONFIGS).map(([key, config]) => (
+          <Route
+            key={key}
+            path={`/${key}`}
+            element={
+              <RequirePermission permission={config.permissions.view}>
+                <MasterListPage entity={key} />
+              </RequirePermission>
+            }
+          />
+        ))}
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

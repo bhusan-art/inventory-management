@@ -5,6 +5,7 @@ import { Company } from '../../src/models/Company.js';
 import { Role } from '../../src/models/Role.js';
 import { User } from '../../src/models/User.js';
 import { SYSTEM_ROLES } from '../../src/constants/roles.js';
+import { Vendor } from '../../src/models/Vendor.js';
 import { app, resetDatabase, seedTenant, createUser, signIn, auth } from '../helpers/fixtures.js';
 
 /**
@@ -40,6 +41,23 @@ const ENDPOINTS = [
   { name: 'update role',       method: 'put',    path: '/api/v1/roles/:roleId',    requires: ['UPDATE_ROLE'], body: { description: 'x' } },
   { name: 'delete role',       method: 'delete', path: '/api/v1/roles/:roleId',    requires: ['DELETE_ROLE'] },
   { name: 'list permissions',  method: 'get',    path: '/api/v1/permissions',      requires: ['VIEW_ROLE'] },
+
+  // ---- Phase 2: master data ----
+  { name: 'list products',     method: 'get',    path: '/api/v1/products',         requires: ['VIEW_PRODUCT'] },
+  { name: 'create product',    method: 'post',   path: '/api/v1/products',         requires: ['CREATE_PRODUCT'], body: {} },
+  { name: 'update product',    method: 'put',    path: '/api/v1/products/:masterId', requires: ['UPDATE_PRODUCT'], body: { name: 'Changed' } },
+  { name: 'delete product',    method: 'delete', path: '/api/v1/products/:masterId', requires: ['DELETE_PRODUCT'] },
+  { name: 'import products',   method: 'post',   path: '/api/v1/products/import',  requires: ['CREATE_PRODUCT'], body: { csv: 'name\n' } },
+  { name: 'list categories',   method: 'get',    path: '/api/v1/categories',       requires: ['VIEW_CATEGORY'] },
+  { name: 'create category',   method: 'post',   path: '/api/v1/categories',       requires: ['CREATE_CATEGORY'], body: {} },
+  { name: 'list brands',       method: 'get',    path: '/api/v1/brands',           requires: ['VIEW_CATEGORY'] },
+  { name: 'list warehouses',   method: 'get',    path: '/api/v1/warehouses',       requires: ['VIEW_WAREHOUSE'] },
+  { name: 'create warehouse',  method: 'post',   path: '/api/v1/warehouses',       requires: ['CREATE_WAREHOUSE'], body: {} },
+  { name: 'list vendors',      method: 'get',    path: '/api/v1/vendors',          requires: ['VIEW_VENDOR'] },
+  { name: 'create vendor',     method: 'post',   path: '/api/v1/vendors',          requires: ['CREATE_VENDOR'], body: {} },
+  { name: 'view vendor bank',  method: 'get',    path: '/api/v1/vendors/:masterId/bank-details', requires: ['VIEW_VENDOR', 'VIEW_VENDOR_BANK_DETAILS'] },
+  { name: 'list customers',    method: 'get',    path: '/api/v1/customers',        requires: ['VIEW_CUSTOMER'] },
+  { name: 'create customer',   method: 'post',   path: '/api/v1/customers',        requires: ['CREATE_CUSTOMER'], body: {} },
 ];
 
 const DENIED_STATUSES = [401, 403];
@@ -69,13 +87,26 @@ beforeEach(async () => {
   // self-modification guard and mask an authorization result.
   const target = await createUser({ company, role: roles.VIEWER, email: 'target@test.local' });
 
-  context = { company, roles, tokens, targetUserId: String(target._id), targetRoleId: String(roles.VIEWER._id) };
+  // A master record the master-data endpoints can act on. Vendor is used for
+  // every :masterId route: the routes only need a well-formed id that exists,
+  // and authorization is decided before the handler ever loads it.
+  const vendor = await Vendor.create({
+    tenantId: company._id, vendorName: 'Matrix Vendor', vendorCode: 'V-MATRIX',
+  });
+
+  context = {
+    company, roles, tokens,
+    targetUserId: String(target._id),
+    targetRoleId: String(roles.VIEWER._id),
+    masterId: String(vendor._id),
+  };
 });
 
 function resolvePath(path) {
   return path
     .replace(':userId', context.targetUserId)
-    .replace(':roleId', context.targetRoleId);
+    .replace(':roleId', context.targetRoleId)
+    .replace(':masterId', context.masterId);
 }
 
 describe('role × endpoint permission matrix', () => {

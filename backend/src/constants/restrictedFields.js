@@ -23,6 +23,8 @@ export const RESTRICTED_FIELDS = Object.freeze({
   Vendor: {
     phone: P.VIEW_CONTACT_DETAILS,
     email: P.VIEW_CONTACT_DETAILS,
+    // Even holders of this permission see only the last four digits on list
+    // and detail views — see maskBankDetails in master.serializer.js.
     bankDetails: P.VIEW_VENDOR_BANK_DETAILS,
   },
   Customer: {

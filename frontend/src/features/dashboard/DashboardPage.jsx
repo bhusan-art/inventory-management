@@ -1,6 +1,4 @@
-import { useDispatch } from 'react-redux';
-import { LogOut, ShieldCheck } from 'lucide-react';
-import { logout } from '../auth/authSlice.js';
+import { ShieldCheck } from 'lucide-react';
 import { useSession, usePermissions } from '../../hooks/usePermission.js';
 import PermissionGuard from '../../components/PermissionGuard.jsx';
 
@@ -13,7 +11,6 @@ import PermissionGuard from '../../components/PermissionGuard.jsx';
  * Phase 10 replaces this with the real dashboard.
  */
 export default function DashboardPage() {
-  const dispatch = useDispatch();
   const session = useSession();
   const permissions = usePermissions();
 
@@ -24,29 +21,7 @@ export default function DashboardPage() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-base font-semibold text-slate-900">Inventory Management System</h1>
-            <p className="text-xs text-slate-500">Phase 1 — authentication and access control</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-slate-900">{session?.fullName}</p>
-              <p className="text-xs text-slate-500">{session?.role?.name}</p>
-            </div>
-            <button
-              onClick={() => dispatch(logout())}
-              className="flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+    <div className="space-y-6">
         <section className="rounded-lg border border-slate-200 bg-white p-6">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
@@ -91,7 +66,6 @@ export default function DashboardPage() {
             </p>
           </div>
         </PermissionGuard>
-      </main>
     </div>
   );
 }
