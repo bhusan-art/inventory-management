@@ -67,7 +67,15 @@ export default function AppRoutes() {
             path={`/${key}`}
             element={
               <RequirePermission permission={config.permissions.view}>
-                <MasterListPage entity={key} />
+                {/*
+                  The key is load-bearing. Every one of these routes renders the
+                  same component type at the same position, so React reconciles
+                  them as "the same element with new props" and keeps the state —
+                  including rows loaded for the previous entity. Changing the key
+                  forces an unmount and a clean mount, which is what a page
+                  refresh does and why a refresh "fixed" it.
+                */}
+                <MasterListPage key={key} entity={key} />
               </RequirePermission>
             }
           />

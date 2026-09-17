@@ -36,6 +36,13 @@ export default function MasterListPage({ entity }) {
 
   useEffect(() => { setPage(1); }, [debouncedSearch, key]);
 
+  // Belt and braces alongside the route key: never render rows fetched for a
+  // different entity against this entity's columns.
+  useEffect(() => {
+    setState({ rows: [], meta: null, loading: true, error: null });
+    setSearch('');
+  }, [key]);
+
   useEffect(() => {
     if (!config) return undefined;
     let cancelled = false;
@@ -68,6 +75,7 @@ export default function MasterListPage({ entity }) {
           )}
         </div>
 
+        {config.searchable !== false && (
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
           <input
@@ -77,6 +85,7 @@ export default function MasterListPage({ entity }) {
             className="w-72 rounded border border-slate-300 py-2 pl-8 pr-3 text-sm focus:border-slate-500 focus:outline-none"
           />
         </div>
+        )}
       </div>
 
       <DataTable

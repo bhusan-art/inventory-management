@@ -58,6 +58,19 @@ const ENDPOINTS = [
   { name: 'view vendor bank',  method: 'get',    path: '/api/v1/vendors/:masterId/bank-details', requires: ['VIEW_VENDOR', 'VIEW_VENDOR_BANK_DETAILS'] },
   { name: 'list customers',    method: 'get',    path: '/api/v1/customers',        requires: ['VIEW_CUSTOMER'] },
   { name: 'create customer',   method: 'post',   path: '/api/v1/customers',        requires: ['CREATE_CUSTOMER'], body: {} },
+
+  // ---- Phase 3: purchasing and inventory ----
+  { name: 'list purchase orders',  method: 'get',  path: '/api/v1/purchase-orders',   requires: ['VIEW_PURCHASE_ORDER'] },
+  { name: 'create purchase order', method: 'post', path: '/api/v1/purchase-orders',   requires: ['CREATE_PURCHASE_ORDER'], body: {} },
+  { name: 'approve purchase order',method: 'post', path: '/api/v1/purchase-orders/:masterId/approve', requires: ['APPROVE_PURCHASE_ORDER'] },
+  { name: 'short-close PO',        method: 'post', path: '/api/v1/purchase-orders/:masterId/close-short', requires: ['CLOSE_PURCHASE_ORDER'], body: { reason: 'test' } },
+  { name: 'list GRNs',             method: 'get',  path: '/api/v1/grn',               requires: ['VIEW_GRN'] },
+  { name: 'create GRN',            method: 'post', path: '/api/v1/grn',               requires: ['CREATE_GRN'], body: {} },
+  { name: 'post GRN',              method: 'post', path: '/api/v1/grn/:masterId/post', requires: ['POST_GRN'] },
+  { name: 'cancel GRN',            method: 'post', path: '/api/v1/grn/:masterId/cancel', requires: ['CANCEL_GRN'], body: { reason: 'test' } },
+  { name: 'view inventory',        method: 'get',  path: '/api/v1/inventory',         requires: ['VIEW_INVENTORY'] },
+  { name: 'view ledger',           method: 'get',  path: '/api/v1/inventory/transactions', requires: ['VIEW_INVENTORY'] },
+  { name: 'reconcile inventory',   method: 'post', path: '/api/v1/inventory/reconcile', requires: ['RECONCILE_INVENTORY'] },
 ];
 
 const DENIED_STATUSES = [401, 403];

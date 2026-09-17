@@ -8,6 +8,7 @@ import {
   categoryRouter, subcategoryRouter, brandRouter, manufacturerRouter,
   warehouseRouter, vendorRouter, customerRouter, productRouter,
 } from './masterData.js';
+import { purchaseOrderRouter, grnRouter, inventoryRouter } from './purchase.routes.js';
 
 const router = Router();
 
@@ -27,6 +28,11 @@ router.use('/vendors', vendorRouter);
 router.use('/customers', customerRouter);
 router.use('/products', productRouter);
 
-// Phase 3 mounts /purchase-orders and /grn here.
+// Purchasing and inventory (Phase 3)
+router.use('/purchase-orders', purchaseOrderRouter);
+router.use('/grn', grnRouter);
+router.use('/inventory', inventoryRouter);
+
+// Phase 5 mounts /transfers here.
 
 export default router;

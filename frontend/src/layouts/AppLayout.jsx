@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 import { logout } from '../features/auth/authSlice.js';
 import { useSession, usePermissions } from '../hooks/usePermission.js';
 import { visibleNavigation } from '../constants/navigation.js';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
 
 export default function AppLayout() {
   const dispatch = useDispatch();
@@ -76,7 +77,13 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6"><Outlet /></main>
+        {/* Scoped to the content area: a crash inside a page leaves the
+            sidebar and sign-out button usable, so the user is not stranded. */}
+        <main className="flex-1 p-6">
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
       </div>
     </div>
   );

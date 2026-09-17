@@ -50,6 +50,40 @@ export default [
     },
   },
 
+  /**
+   * ARCHITECTURAL GUARDRAIL — the single write path for inventory.
+   *
+   * ARCHITECTURE.md §1.6 and business rule 2 depend on every quantity change
+   * producing a ledger row. That is only structurally true if the code that
+   * changes quantities is the same code that writes ledger rows.
+   *
+   * So: nothing outside src/services/inventory/ may call a mutating method on
+   * the Inventory model. Reads are unrestricted.
+   *
+   * Uses `no-restricted-properties` rather than `no-restricted-syntax`
+   * deliberately: flat config resolves rules by name, last match wins, so a
+   * second `no-restricted-syntax` block covering the same files would silently
+   * replace the restricted-field rule above rather than adding to it.
+   */
+  {
+    files: ['src/**/*.js'],
+    ignores: ['src/services/inventory/**'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        ...['create', 'insertMany', 'updateOne', 'updateMany', 'findOneAndUpdate',
+          'findByIdAndUpdate', 'deleteOne', 'deleteMany', 'bulkWrite'].map((property) => ({
+          object: 'Inventory',
+          property,
+          message:
+            'Inventory quantities may only be changed by ' +
+            'src/services/inventory/ledgerService.js, so that every movement produces a ' +
+            'ledger row. See ARCHITECTURE.md §1.6.',
+        })),
+      ],
+    },
+  },
+
   {
     files: ['tests/**/*.js'],
     languageOptions: { globals: { ...globals.node, ...globals.jest } },

@@ -23,16 +23,23 @@ export const REFERENCES = {
   Manufacturer: [{ model: 'Product', field: 'manufacturer', label: 'products' }],
   Warehouse: [
     { model: 'User', field: 'scope.warehouseIds', label: 'users scoped to it' },
-    // Phase 3+ appends: Inventory, GRN, Transfer, DispatchNote.
+    { model: 'Inventory', field: 'warehouse', label: 'inventory records' },
+    { model: 'PurchaseOrder', field: 'warehouse', label: 'purchase orders' },
+    { model: 'GRN', field: 'warehouse', label: 'goods receipts' },
+    // Phase 5 appends: WarehouseTransfer. Phase 7: DispatchNote.
   ],
   Vendor: [
-    // Phase 3 appends: PurchaseOrder, GRN.
+    { model: 'PurchaseOrder', field: 'vendor', label: 'purchase orders' },
+    { model: 'GRN', field: 'vendor', label: 'goods receipts' },
   ],
   Customer: [
     // Phase 7 appends: SalesOrder, DispatchNote, Warranty.
   ],
   Product: [
-    // Phase 3+ appends: Inventory, SerialNumber, PurchaseOrder lines.
+    { model: 'Inventory', field: 'product', label: 'inventory records' },
+    { model: 'SerialNumber', field: 'product', label: 'serial numbers' },
+    { model: 'PurchaseOrder', field: 'lines.product', label: 'purchase order lines' },
+    { model: 'GRN', field: 'lines.product', label: 'goods receipt lines' },
   ],
 };
 

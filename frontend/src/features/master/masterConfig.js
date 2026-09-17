@@ -17,7 +17,7 @@ export const MASTER_CONFIGS = {
       { key: 'name', label: 'Name' },
       { key: 'category', label: 'Category', render: (r) => r.category?.name ?? '—' },
       { key: 'brand', label: 'Brand', render: (r) => r.brand?.name ?? '—' },
-      { key: 'productType', label: 'Type', render: (r) => (r.productType === 'SERIALIZED' ? 'Serialized' : 'Bulk') },
+      { key: 'productType', label: 'Type', render: (r) => (r.productType ? (r.productType === 'SERIALIZED' ? 'Serialized' : 'Bulk') : '—') },
       { key: 'unitOfMeasure', label: 'UoM' },
       { key: 'status', label: 'Status', status: true },
     ],
@@ -97,11 +97,84 @@ export const MASTER_CONFIGS = {
       { key: 'customerCode', label: 'Code', mono: true },
       { key: 'customerName', label: 'Name' },
       { key: 'companyName', label: 'Company' },
-      { key: 'customerType', label: 'Type', render: (r) => r.customerType.replace(/_/g, ' ').toLowerCase() },
+      { key: 'customerType', label: 'Type', render: (r) => humanize(r.customerType) },
       { key: 'phone', label: 'Phone', permission: 'VIEW_CONTACT_DETAILS' },
       { key: 'status', label: 'Status', status: true },
     ],
   },
+
+  // ---- Phase 3: purchasing and inventory ----
+  // Not master data, but the same list shape: server-side search, pagination
+  // and permission-filtered columns. Reusing the component rather than writing
+  // three near-identical pages.
+  'purchase-orders': {
+    title: 'Purchase Orders',
+    endpoint: 'purchase-orders',
+    permissions: { view: 'VIEW_PURCHASE_ORDER', create: 'CREATE_PURCHASE_ORDER' },
+    searchPlaceholder: 'Search by PO number…',
+    columns: [
+      { key: 'poNumber', label: 'PO number', mono: true },
+      { key: 'vendor', label: 'Vendor', render: (r) => r.vendor?.name ?? '—' },
+      { key: 'warehouse', label: 'Warehouse', render: (r) => r.warehouse?.name ?? '—' },
+      { key: 'orderDate', label: 'Ordered', render: (r) => formatDate(r.orderDate) },
+      { key: 'ordered', label: 'Qty', render: (r) => r.totals?.ordered ?? 0 },
+      // The number an operator actually asks for: what is still to come.
+      { key: 'outstanding', label: 'Outstanding', render: (r) => r.totals?.outstanding ?? 0 },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
+  grn: {
+    title: 'Goods Received',
+    endpoint: 'grn',
+    permissions: { view: 'VIEW_GRN', create: 'CREATE_GRN' },
+    searchPlaceholder: 'Search by GRN number…',
+    columns: [
+      { key: 'grnNumber', label: 'GRN number', mono: true },
+      { key: 'vendor', label: 'Vendor', render: (r) => r.vendor?.name ?? '—' },
+      { key: 'warehouse', label: 'Warehouse', render: (r) => r.warehouse?.name ?? '—' },
+      { key: 'receivedDate', label: 'Received', render: (r) => formatDate(r.receivedDate) },
+      { key: 'accepted', label: 'Accepted', render: (r) => r.totals?.accepted ?? 0 },
+      { key: 'damaged', label: 'Damaged', render: (r) => r.totals?.damaged ?? 0 },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
+  inventory: {
+    title: 'Inventory',
+    endpoint: 'inventory',
+    permissions: { view: 'VIEW_INVENTORY' },
+    searchable: false,
+    columns: [
+      { key: 'sku', label: 'SKU', mono: true, render: (r) => r.product?.code ?? '—' },
+      { key: 'product', label: 'Product', render: (r) => r.product?.name ?? '—' },
+      { key: 'warehouse', label: 'Warehouse', render: (r) => r.warehouse?.name ?? '—' },
+      { key: 'available', label: 'Available' },
+      { key: 'reserved', label: 'Reserved' },
+      { key: 'damaged', label: 'Damaged' },
+      { key: 'total', label: 'Total' },
+    ],
+  },
 };
+
+/**
+ * Renderers must survive a row that does not have their field.
+ *
+ * `r.customerType.replace(...)` crashed the whole page the first time a stale
+ * product row was rendered against the customer columns — and because a render
+ * crash unmounts the tree before effects run, the fetch that would have
+ * replaced those rows never fired. The route key above fixes the cause; these
+ * guards mean a single unexpected row shape degrades one cell instead of
+ * taking down the screen.
+ */
+function humanize(value) {
+  if (!value) return '—';
+  return String(value).replace(/_/g, ' ').toLowerCase();
+}
+
+function formatDate(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 export default MASTER_CONFIGS;
