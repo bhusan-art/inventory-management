@@ -71,6 +71,14 @@ const ENDPOINTS = [
   { name: 'view inventory',        method: 'get',  path: '/api/v1/inventory',         requires: ['VIEW_INVENTORY'] },
   { name: 'view ledger',           method: 'get',  path: '/api/v1/inventory/transactions', requires: ['VIEW_INVENTORY'] },
   { name: 'reconcile inventory',   method: 'post', path: '/api/v1/inventory/reconcile', requires: ['RECONCILE_INVENTORY'] },
+
+  // ---- Phase 4: adjustments, counts, alerts ----
+  { name: 'view low stock',      method: 'get',   path: '/api/v1/inventory/low-stock', requires: ['VIEW_INVENTORY'] },
+  { name: 'adjust stock',        method: 'post',  path: '/api/v1/inventory/adjust',    requires: ['ADJUST_INVENTORY'], body: {} },
+  { name: 'reclassify stock',    method: 'post',  path: '/api/v1/inventory/reclassify', requires: ['ADJUST_INVENTORY'], body: {} },
+  { name: 'list stock counts',   method: 'get',   path: '/api/v1/stock-counts',        requires: ['VIEW_INVENTORY'] },
+  { name: 'start stock count',   method: 'post',  path: '/api/v1/stock-counts',        requires: ['ADJUST_INVENTORY'], body: {} },
+  { name: 'complete stock count',method: 'post',  path: '/api/v1/stock-counts/:masterId/complete', requires: ['ADJUST_INVENTORY_UNLIMITED'], body: {} },
 ];
 
 const DENIED_STATUSES = [401, 403];

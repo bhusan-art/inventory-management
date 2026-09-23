@@ -10,20 +10,12 @@
 import env from './src/config/env.js';
 import logger from './src/config/logger.js';
 import { connectDatabase, disconnectDatabase } from './src/config/db.js';
-
-const jobs = [
-  // { name: 'warrantyAlerts', schedule: '0 2 * * *', handler: warrantyAlerts },
-  // { name: 'lowStockScan',   schedule: '0 6 * * *', handler: lowStockScan },
-  // { name: 'reconcileLedger',schedule: '0 3 * * *', handler: reconcileLedger },
-];
+import { startScheduler, JOBS } from './src/jobs/scheduler.js';
 
 async function start() {
   await connectDatabase();
-  logger.info({ env: env.NODE_ENV, jobs: jobs.length }, 'Worker started');
-
-  if (jobs.length === 0) {
-    logger.info('No jobs registered yet — worker idle (expected until Phase 8)');
-  }
+  startScheduler();
+  logger.info({ env: env.NODE_ENV, jobs: JOBS.length }, 'Worker started');
 
   const shutdown = async (signal) => {
     logger.info({ signal }, 'Worker shutting down');

@@ -5,6 +5,7 @@ import { logout } from '../features/auth/authSlice.js';
 import { useSession, usePermissions } from '../hooks/usePermission.js';
 import { visibleNavigation } from '../constants/navigation.js';
 import ErrorBoundary from '../components/ErrorBoundary.jsx';
+import NotificationBell from '../components/NotificationBell.jsx';
 
 export default function AppLayout() {
   const dispatch = useDispatch();
@@ -64,6 +65,7 @@ export default function AppLayout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-4">
+            <NotificationBell />
             <div className="text-right">
               <p className="text-sm font-medium text-slate-900">{session?.fullName}</p>
               <p className="text-xs text-slate-500">{session?.role?.name}</p>

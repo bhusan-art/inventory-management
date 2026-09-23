@@ -1,3 +1,4 @@
+
 # Enterprise Inventory, Warehouse, Serial Number and Warranty Management System
 
 Traceability for every unit of stock from purchase order to warranty expiry.
@@ -58,3 +59,5 @@ docs/       architecture, setup, operations
 - `docs/ARCHITECTURE.md` — the approved design. Read §0 first.
 - `docs/SETUP.md` — local setup, including running without Docker.
 - `docs/PHASE-0.md` — what this phase delivered and how it was verified.
+
+

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Tags, Building2, Users, Warehouse,
-  Factory, BadgeCheck, Contact,
+  Factory, BadgeCheck, Contact, ClipboardList, PackageCheck, Boxes, ClipboardCheck,
 } from 'lucide-react';
 
 /**
@@ -13,6 +13,16 @@ import {
  */
 export const NAVIGATION = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+
+  {
+    section: 'Operations',
+    items: [
+      { label: 'Purchase Orders', to: '/purchase-orders', icon: ClipboardList, permission: 'VIEW_PURCHASE_ORDER' },
+      { label: 'Goods Received', to: '/grn', icon: PackageCheck, permission: 'VIEW_GRN' },
+      { label: 'Inventory', to: '/inventory', icon: Boxes, permission: 'VIEW_INVENTORY' },
+      { label: 'Stock Counts', to: '/stock-counts', icon: ClipboardCheck, permission: 'VIEW_INVENTORY' },
+    ],
+  },
 
   {
     section: 'Master data',

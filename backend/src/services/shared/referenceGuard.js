@@ -26,6 +26,7 @@ export const REFERENCES = {
     { model: 'Inventory', field: 'warehouse', label: 'inventory records' },
     { model: 'PurchaseOrder', field: 'warehouse', label: 'purchase orders' },
     { model: 'GRN', field: 'warehouse', label: 'goods receipts' },
+    { model: 'StockCount', field: 'warehouse', label: 'stock counts' },
     // Phase 5 appends: WarehouseTransfer. Phase 7: DispatchNote.
   ],
   Vendor: [

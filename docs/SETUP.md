@@ -94,6 +94,43 @@ purpose.
 `VITE_API_PROXY` points at the wrong host. Inside Docker the proxy target must
 be the service name, not `localhost`.
 
+**Backend exits with `Cannot find module` after adding a dependency** — the
+anonymous volume in `docker-compose.yml` (`- /app/node_modules`) persists across
+`docker compose up --build`, so a rebuilt image mounts stale modules over the
+new ones. Fix with `docker compose down -v` (this also wipes MongoDB, so re-run
+the seed), or name the volume so it can be removed on its own:
+
+```yaml
+    volumes:
+      - ./backend:/app
+      - backend-node-modules:/app/node_modules
+```
+
+then `docker volume rm <project>_backend-node-modules` after any dependency
+change, with no data loss.
+
+**Locked out of an account after five wrong passwords** — login failures are
+deliberately indistinguishable (see docs/PHASE-1.md), so a lockout looks like a
+wrong password. Check the audit log for `ACCOUNT_LOCKED`, then:
+
+```
+docker compose exec mongo mongosh ims
+db.users.updateOne({email:"..."},{$set:{lockedUntil:null,failedLoginAttempts:0}})
+```
+
+On Windows, use the interactive `mongosh` shell rather than `--eval`: PowerShell
+strips the quotes before Docker sees them.
+
+**`npm install` fails in frontend/ with ERESOLVE** — `@vitejs/plugin-react` v4
+only supports Vite 4 and 5. On Vite 7 you need `@vitejs/plugin-react` ^5.
+Similarly, `eslint-plugin-react-hooks` v4 will not install alongside ESLint 9;
+v5 supports both.
+
+**Seed fails with `CastError ... at path "_id" for model "Permission"`** — an
+old copy of `config/db.js` still has `mongoose.set('sanitizeFilter', true)`.
+That setting mangles developer-written query operators and must stay off; see
+docs/PHASE-1.md.
+
 **Tests hang on connection** — the test `MONGODB_URI` is missing
 `?replicaSet=rs0&directConnection=true`. Without `directConnection`, the driver
 tries to discover replica set members by their advertised hostnames, which do
