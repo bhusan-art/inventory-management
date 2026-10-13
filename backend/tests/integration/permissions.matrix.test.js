@@ -96,6 +96,16 @@ const ENDPOINTS = [
   { name: 'update serial',       method: 'patch', path: '/api/v1/serials/:masterId',          requires: ['UPDATE_SERIAL'], body: { assetTag: 'T-1' } },
   { name: 'override serial status', method: 'patch', path: '/api/v1/serials/:masterId/status', requires: ['OVERRIDE_SERIAL_STATUS'], body: {} },
   { name: 'import serials',      method: 'post',  path: '/api/v1/serials/import',             requires: ['CREATE_SERIAL', 'ADJUST_INVENTORY_UNLIMITED'], body: {} },
+
+  // ---- Phase 7: sales orders and dispatch ----
+  { name: 'list sales orders',   method: 'get',  path: '/api/v1/sales-orders',                      requires: ['VIEW_SALES_ORDER'] },
+  { name: 'create sales order',  method: 'post', path: '/api/v1/sales-orders',                      requires: ['CREATE_SALES_ORDER'], body: {} },
+  { name: 'confirm sales order', method: 'post', path: '/api/v1/sales-orders/:masterId/confirm',    requires: ['CONFIRM_SALES_ORDER'], body: {} },
+  { name: 'release reservation', method: 'post', path: '/api/v1/sales-orders/:masterId/release',    requires: ['CONFIRM_SALES_ORDER'], body: { reason: 'test' } },
+  { name: 'cancel sales order',  method: 'post', path: '/api/v1/sales-orders/:masterId/cancel',     requires: ['UPDATE_SALES_ORDER'], body: { reason: 'test' } },
+  { name: 'list dispatch notes', method: 'get',  path: '/api/v1/dispatch-notes',                    requires: ['VIEW_DISPATCH_NOTE'] },
+  { name: 'dispatch goods',      method: 'post', path: '/api/v1/dispatch-notes',                    requires: ['CREATE_DISPATCH'], body: {} },
+  { name: 'cancel dispatch',     method: 'post', path: '/api/v1/dispatch-notes/:masterId/cancel',   requires: ['CANCEL_DISPATCH'], body: { reason: 'test' } },
 ];
 
 const DENIED_STATUSES = [401, 403];

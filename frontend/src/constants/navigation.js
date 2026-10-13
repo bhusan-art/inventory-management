@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Package, Tags, Building2, Users, Warehouse,
   Factory, BadgeCheck, Contact, ClipboardList, PackageCheck, Boxes, ClipboardCheck, Truck,
+  ScanLine, ShoppingCart, Send,
 } from 'lucide-react';
 
 /**
@@ -21,6 +22,9 @@ export const NAVIGATION = [
       { label: 'Goods Received', to: '/grn', icon: PackageCheck, permission: 'VIEW_GRN' },
       { label: 'Inventory', to: '/inventory', icon: Boxes, permission: 'VIEW_INVENTORY' },
       { label: 'Transfers', to: '/transfers', icon: Truck, permission: 'VIEW_TRANSFER' },
+      { label: 'Serial Numbers', to: '/serials', icon: ScanLine, permission: 'VIEW_SERIAL' },
+      { label: 'Sales Orders', to: '/sales-orders', icon: ShoppingCart, permission: 'VIEW_SALES_ORDER' },
+      { label: 'Dispatch Notes', to: '/dispatch-notes', icon: Send, permission: 'VIEW_DISPATCH_NOTE' },
       { label: 'Stock Counts', to: '/stock-counts', icon: ClipboardCheck, permission: 'VIEW_INVENTORY' },
     ],
   },

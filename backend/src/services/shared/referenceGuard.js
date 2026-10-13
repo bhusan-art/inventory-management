@@ -29,14 +29,18 @@ export const REFERENCES = {
     { model: 'StockCount', field: 'warehouse', label: 'stock counts' },
     { model: 'WarehouseTransfer', field: 'sourceWarehouse', label: 'outgoing transfers' },
     { model: 'WarehouseTransfer', field: 'destinationWarehouse', label: 'incoming transfers' },
-    // Phase 7 appends: DispatchNote.
+    { model: 'DispatchNote', field: 'warehouse', label: 'dispatch notes' },
+    { model: 'SalesOrder', field: 'warehouse', label: 'sales orders' },
   ],
   Vendor: [
     { model: 'PurchaseOrder', field: 'vendor', label: 'purchase orders' },
     { model: 'GRN', field: 'vendor', label: 'goods receipts' },
   ],
   Customer: [
-    // Phase 7 appends: SalesOrder, DispatchNote, Warranty.
+    { model: 'SalesOrder', field: 'customer', label: 'sales orders' },
+    { model: 'DispatchNote', field: 'customer', label: 'dispatch notes' },
+    { model: 'Warranty', field: 'customer', label: 'warranties' },
+    { model: 'SerialNumber', field: 'customer', label: 'units they hold' },
   ],
   Product: [
     { model: 'Inventory', field: 'product', label: 'inventory records' },
@@ -44,6 +48,8 @@ export const REFERENCES = {
     { model: 'PurchaseOrder', field: 'lines.product', label: 'purchase order lines' },
     { model: 'GRN', field: 'lines.product', label: 'goods receipt lines' },
     { model: 'WarehouseTransfer', field: 'lines.product', label: 'transfer lines' },
+    { model: 'SalesOrder', field: 'lines.product', label: 'sales order lines' },
+    { model: 'DispatchNote', field: 'lines.product', label: 'dispatch lines' },
   ],
 };
 

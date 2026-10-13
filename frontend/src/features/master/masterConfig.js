@@ -173,6 +173,39 @@ export const MASTER_CONFIGS = {
     ],
   },
 
+  'sales-orders': {
+    title: 'Sales Orders',
+    endpoint: 'sales-orders',
+    permissions: { view: 'VIEW_SALES_ORDER', create: 'CREATE_SALES_ORDER' },
+    searchPlaceholder: 'Search by order number…',
+    columns: [
+      { key: 'salesOrderNumber', label: 'Order', mono: true },
+      { key: 'customer', label: 'Customer', render: (r) => r.customer?.name ?? '—' },
+      { key: 'orderDate', label: 'Ordered', render: (r) => formatDate(r.orderDate) },
+      { key: 'ordered', label: 'Qty', render: (r) => r.totals?.ordered ?? 0 },
+      // What is claimed but not yet shipped — the number a salesperson asks for.
+      { key: 'reserved', label: 'Reserved', render: (r) => r.totals?.reserved ?? 0 },
+      { key: 'outstanding', label: 'Outstanding', render: (r) => r.totals?.outstanding ?? 0 },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
+  'dispatch-notes': {
+    title: 'Dispatch Notes',
+    endpoint: 'dispatch-notes',
+    permissions: { view: 'VIEW_DISPATCH_NOTE', create: 'CREATE_DISPATCH' },
+    searchPlaceholder: 'Search by dispatch number…',
+    columns: [
+      { key: 'dispatchNoteNumber', label: 'Dispatch', mono: true },
+      { key: 'customer', label: 'Customer', render: (r) => r.customer?.name ?? '—' },
+      { key: 'dispatchDate', label: 'Dispatched', render: (r) => formatDate(r.dispatchDate) },
+      { key: 'units', label: 'Units', render: (r) => r.totals?.units ?? 0 },
+      { key: 'serials', label: 'Serials', render: (r) => r.totals?.serials ?? 0 },
+      { key: 'vehicleNumber', label: 'Vehicle', mono: true },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
   serials: {
     title: 'Serial Numbers',
     endpoint: 'serials',

@@ -13,6 +13,7 @@ import {
 } from './purchase.routes.js';
 import { transferRouter } from './transfer.routes.js';
 import { serialRouter } from './serial.routes.js';
+import { salesOrderRouter, dispatchRouter } from './sales.routes.js';
 
 const router = Router();
 
@@ -41,6 +42,8 @@ router.use('/notifications', notificationRouter);
 
 router.use('/transfers', transferRouter);
 router.use('/serials', serialRouter);
+router.use('/sales-orders', salesOrderRouter);
+router.use('/dispatch-notes', dispatchRouter);
 
 // Phase 7 mounts /sales-orders and /dispatch-notes here.
 

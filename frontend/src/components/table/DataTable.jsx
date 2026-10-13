@@ -120,6 +120,13 @@ const TONES = {
   DRAFT: 'bg-slate-100 text-slate-600 border-slate-200',
   LOCKED: 'bg-red-50 text-red-700 border-red-200',
   PENDING_ACTIVATION: 'bg-amber-50 text-amber-700 border-amber-200',
+  CONFIRMED: 'bg-blue-50 text-blue-700 border-blue-200',
+  PARTIALLY_DISPATCHED: 'bg-amber-50 text-amber-700 border-amber-200',
+  DISPATCHED: 'bg-violet-50 text-violet-700 border-violet-200',
+  DELIVERED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  CLOSED: 'bg-slate-100 text-slate-600 border-slate-200',
+  PARTIALLY_RETURNED: 'bg-amber-50 text-amber-700 border-amber-200',
+  RETURNED: 'bg-red-50 text-red-700 border-red-200',
 };
 
 export function StatusBadge({ value }) {
