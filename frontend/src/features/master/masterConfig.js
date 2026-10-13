@@ -155,6 +155,71 @@ export const MASTER_CONFIGS = {
       { key: 'total', label: 'Total' },
     ],
   },
+
+  transfers: {
+    title: 'Warehouse Transfers',
+    endpoint: 'transfers',
+    permissions: { view: 'VIEW_TRANSFER', create: 'CREATE_TRANSFER' },
+    searchPlaceholder: 'Search by transfer number…',
+    columns: [
+      { key: 'transferNumber', label: 'Transfer', mono: true },
+      { key: 'from', label: 'From', render: (r) => r.sourceWarehouse?.name ?? '—' },
+      { key: 'to', label: 'To', render: (r) => r.destinationWarehouse?.name ?? '—' },
+      { key: 'requested', label: 'Qty', render: (r) => r.totals?.requested ?? 0 },
+      // The column that matters mid-journey: what is on the road right now.
+      { key: 'inTransit', label: 'In transit', render: (r) => r.totals?.inTransit ?? 0 },
+      { key: 'received', label: 'Received', render: (r) => r.totals?.received ?? 0 },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
+  serials: {
+    title: 'Serial Numbers',
+    endpoint: 'serials',
+    permissions: { view: 'VIEW_SERIAL', create: 'CREATE_SERIAL' },
+    searchPlaceholder: 'Serial, asset tag, MAC or IMEI…',
+    rowLink: (r) => `/serials/${r.id}`,
+    columns: [
+      { key: 'serialNumber', label: 'Serial', mono: true },
+      { key: 'product', label: 'Product', render: (r) => r.product?.name ?? '—' },
+      { key: 'warehouse', label: 'Location', render: (r) => r.warehouse?.name ?? '—' },
+      { key: 'customer', label: 'Customer', render: (r) => r.customer?.name ?? '—' },
+      { key: 'assetTag', label: 'Asset tag', mono: true },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
+  users: {
+    title: 'Users',
+    endpoint: 'users',
+    permissions: { view: 'VIEW_USER', create: 'CREATE_USER' },
+    searchPlaceholder: 'Search by name or email…',
+    columns: [
+      { key: 'fullName', label: 'Name' },
+      { key: 'email', label: 'Email', mono: true },
+      { key: 'phone', label: 'Phone', permission: 'VIEW_CONTACT_DETAILS' },
+      { key: 'role', label: 'Role', render: (r) => r.role?.name ?? '—' },
+      { key: 'department', label: 'Department' },
+      { key: 'lastLoginAt', label: 'Last sign-in', render: (r) => formatDate(r.lastLoginAt) },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
+
+  'stock-counts': {
+    title: 'Stock Counts',
+    endpoint: 'stock-counts',
+    permissions: { view: 'VIEW_INVENTORY', create: 'ADJUST_INVENTORY' },
+    searchable: false,
+    columns: [
+      { key: 'countNumber', label: 'Count', mono: true },
+      { key: 'warehouse', label: 'Warehouse', render: (r) => r.warehouse?.name ?? '—' },
+      { key: 'scope', label: 'Scope', render: (r) => humanize(r.scope) },
+      { key: 'progress', label: 'Counted', render: (r) => `${r.progress?.counted ?? 0} / ${r.progress?.total ?? 0}` },
+      { key: 'variances', label: 'Variances', render: (r) => r.progress?.variances ?? 0 },
+      { key: 'snapshotAt', label: 'Started', render: (r) => formatDate(r.snapshotAt) },
+      { key: 'status', label: 'Status', status: true },
+    ],
+  },
 };
 
 /**

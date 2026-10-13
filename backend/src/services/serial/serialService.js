@@ -1,6 +1,9 @@
 import { SerialNumber, SerialNumberEvent } from '../../models/SerialNumber.js';
-import { canTransition } from '../../constants/inventory.js';
-import { DomainError, ConflictError } from '../../utils/errors.js';
+import { canTransition, STATUS_BUCKET } from '../../constants/inventory.js';
+import { applyMovement, moveBetweenBuckets } from '../inventory/ledgerService.js';
+import { withTransaction } from '../shared/transaction.js';
+import { writeAudit } from '../shared/auditService.js';
+import { DomainError, ConflictError, NotFoundError } from '../../utils/errors.js';
 
 /**
  * Serial number state machine.
@@ -124,6 +127,146 @@ export async function createForReceipt({
   );
 
   return created;
+}
+
+/**
+ * Manual status override — for genuine data corrections only.
+ *
+ * The important part is not the status change; it is that the QUANTITY MUST
+ * MOVE WITH IT. Serialized stock has two representations that have to agree:
+ * the number in `Inventory` and the number of serial records in the matching
+ * status. Changing one without the other produces exactly the drift the
+ * reconciliation job exists to find — and here it would be self-inflicted.
+ *
+ * So every override resolves both statuses to their buckets and moves the unit
+ * between them in the same transaction as the status change.
+ */
+export async function overrideStatus(actor, id, { toStatus, reasonCode, remarks, warehouse }) {
+  if (!remarks || remarks.trim().length < 10) {
+    // The transition table says what is possible; only a human can say why.
+    throw new DomainError(
+      'A manual status override needs a written explanation of at least 10 characters',
+      'REMARKS_REQUIRED',
+      [{ code: 'REMARKS_REQUIRED', field: 'remarks' }],
+    );
+  }
+
+  const serialId = await withTransaction(async ({ session, onCommit }) => {
+    const serial = await SerialNumber.findOne({ _id: id, tenantId: actor.tenantId }).session(session);
+    if (!serial) throw new NotFoundError('Serial number not found');
+
+    const fromStatus = serial.status;
+    const fromBucket = STATUS_BUCKET[fromStatus];
+    const toBucket = STATUS_BUCKET[toStatus];
+
+    // A unit that is not currently in a warehouse needs one naming before it
+    // can re-enter stock.
+    const targetWarehouse = warehouse ?? serial.warehouse;
+    if (toBucket && !targetWarehouse) {
+      throw new DomainError(
+        'This unit is not in a warehouse. Name the warehouse it is entering.',
+        'WAREHOUSE_REQUIRED',
+        [{ code: 'WAREHOUSE_REQUIRED', field: 'warehouse' }],
+      );
+    }
+
+    const ref = {
+      transactionType: 'STOCK_ADJUSTMENT',
+      referenceType: 'ADJUSTMENT',
+      referenceId: serial._id,
+      referenceNumber: serial.serialNumber,
+      reasonCode,
+      remarks,
+      serialNumber: serial._id,
+    };
+
+    if (fromBucket && toBucket && fromBucket !== toBucket) {
+      await moveBetweenBuckets({
+        session, actor, product: serial.product, warehouse: serial.warehouse,
+        fromBucket, toBucket, quantity: 1, ...ref,
+      });
+    } else if (fromBucket && !toBucket) {
+      // Leaving stock entirely — scrapped, returned to vendor.
+      await applyMovement({
+        session, actor, product: serial.product, warehouse: serial.warehouse,
+        bucket: fromBucket, quantityChange: -1, ...ref,
+      });
+    } else if (!fromBucket && toBucket) {
+      await applyMovement({
+        session, actor, product: serial.product, warehouse: targetWarehouse,
+        bucket: toBucket, quantityChange: 1, ...ref,
+      });
+    }
+
+    await transition({
+      session, actor, serial, toStatus,
+      eventType: 'MANUAL_OVERRIDE',
+      referenceType: 'ADJUSTMENT',
+      warehouse: toBucket ? targetWarehouse : null,
+      remarks,
+    });
+
+    onCommit(() => writeAudit({
+      action: 'SERIAL_STATUS_OVERRIDDEN',
+      module: 'SerialNumber',
+      recordId: serial._id,
+      recordLabel: serial.serialNumber,
+      // Overriding a lifecycle by hand is exactly the action an audit exists for.
+      severity: 'CRITICAL',
+      tenantId: actor.tenantId,
+      changes: [{ field: 'status', before: fromStatus, after: toStatus }],
+      metadata: { reasonCode, remarks, fromBucket, toBucket },
+    }));
+
+    return serial._id;
+  });
+
+  return SerialNumber.findById(serialId).populate('product warehouse customer');
+}
+
+/**
+ * Updates identifiers and location notes — asset tag, MAC, IMEI, installation
+ * site. Never touches status, so it needs no stock movement and no elevated
+ * permission.
+ */
+export async function updateAttributes(actor, id, payload) {
+  const serial = await SerialNumber.findOne({ _id: id, tenantId: actor.tenantId });
+  if (!serial) throw new NotFoundError('Serial number not found');
+
+  const before = serial.toObject();
+  const fields = ['assetTag', 'macAddress', 'imei', 'installationLocation', 'rackLocation', 'remarks'];
+
+  for (const field of fields) {
+    if (payload[field] !== undefined) serial[field] = payload[field] || null;
+  }
+
+  // Sparse-unique indexes catch this at the database, but a clear message beats
+  // a duplicate-key error naming an index.
+  for (const field of ['assetTag', 'macAddress', 'imei']) {
+    if (!serial[field]) continue;
+    const clash = await SerialNumber.findOne({
+      tenantId: actor.tenantId, [field]: serial[field], _id: { $ne: serial._id },
+    }).select('serialNumber');
+    if (clash) {
+      throw new ConflictError(
+        `${field} ${serial[field]} is already on serial ${clash.serialNumber}`,
+        'DUPLICATE_IDENTIFIER',
+        [{ code: 'DUPLICATE_IDENTIFIER', field }],
+      );
+    }
+  }
+
+  await serial.save();
+
+  await writeAudit({
+    action: 'SERIAL_ATTRIBUTES_UPDATED', module: 'SerialNumber', recordId: serial._id,
+    recordLabel: serial.serialNumber, severity: 'NOTICE', tenantId: actor.tenantId,
+    changes: fields
+      .filter((f) => payload[f] !== undefined && before[f] !== serial[f])
+      .map((f) => ({ field: f, before: before[f] ?? null, after: serial[f] ?? null })),
+  });
+
+  return serial.populate('product warehouse customer');
 }
 
 /** Validates entered serials against the product's format, when one is set. */

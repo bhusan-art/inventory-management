@@ -33,7 +33,8 @@ export default [
 
   // Build tooling runs in Node, not the browser.
   {
-    files: ['vite.config.js', 'tailwind.config.js', 'postcss.config.js', 'eslint.config.js'],
+    files: ['vite.config.js', 'tailwind.config.js', 'postcss.config.js', 'eslint.config.js', 'scripts/**/*.mjs'],
     languageOptions: { globals: { ...globals.node } },
+    rules: { 'no-console': 'off' },
   },
 ];

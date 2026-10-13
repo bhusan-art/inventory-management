@@ -11,6 +11,8 @@ import {
 import {
   purchaseOrderRouter, grnRouter, inventoryRouter, stockCountRouter, notificationRouter,
 } from './purchase.routes.js';
+import { transferRouter } from './transfer.routes.js';
+import { serialRouter } from './serial.routes.js';
 
 const router = Router();
 
@@ -37,6 +39,9 @@ router.use('/inventory', inventoryRouter);
 router.use('/stock-counts', stockCountRouter);
 router.use('/notifications', notificationRouter);
 
-// Phase 5 mounts /transfers here.
+router.use('/transfers', transferRouter);
+router.use('/serials', serialRouter);
+
+// Phase 7 mounts /sales-orders and /dispatch-notes here.
 
 export default router;

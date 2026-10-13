@@ -5,6 +5,7 @@ import ChangePasswordPage from '../features/auth/ChangePasswordPage.jsx';
 import DashboardPage from '../features/dashboard/DashboardPage.jsx';
 import AppLayout from '../layouts/AppLayout.jsx';
 import MasterListPage from '../features/master/MasterListPage.jsx';
+import SerialDetailPage from '../features/serials/SerialDetailPage.jsx';
 import { MASTER_CONFIGS } from '../features/master/masterConfig.js';
 
 /**
@@ -59,6 +60,15 @@ export default function AppRoutes() {
       <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route element={<Protected><AppLayout /></Protected>}>
         <Route path="/" element={<DashboardPage />} />
+        {/* Declared before the generated list routes so it is not shadowed. */}
+        <Route
+          path="/serials/:id"
+          element={
+            <RequirePermission permission="VIEW_SERIAL">
+              <SerialDetailPage />
+            </RequirePermission>
+          }
+        />
         {/* One route per master entity, generated from the same config that
             drives the sidebar and the columns. */}
         {Object.entries(MASTER_CONFIGS).map(([key, config]) => (

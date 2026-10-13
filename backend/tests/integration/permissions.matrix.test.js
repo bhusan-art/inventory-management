@@ -79,6 +79,23 @@ const ENDPOINTS = [
   { name: 'list stock counts',   method: 'get',   path: '/api/v1/stock-counts',        requires: ['VIEW_INVENTORY'] },
   { name: 'start stock count',   method: 'post',  path: '/api/v1/stock-counts',        requires: ['ADJUST_INVENTORY'], body: {} },
   { name: 'complete stock count',method: 'post',  path: '/api/v1/stock-counts/:masterId/complete', requires: ['ADJUST_INVENTORY_UNLIMITED'], body: {} },
+
+  // ---- Phase 5: transfers ----
+  { name: 'list transfers',      method: 'get',  path: '/api/v1/transfers',                  requires: ['VIEW_TRANSFER'] },
+  { name: 'request transfer',    method: 'post', path: '/api/v1/transfers',                  requires: ['CREATE_TRANSFER'], body: {} },
+  { name: 'approve transfer',    method: 'post', path: '/api/v1/transfers/:masterId/approve', requires: ['APPROVE_TRANSFER'] },
+  { name: 'dispatch transfer',   method: 'post', path: '/api/v1/transfers/:masterId/dispatch', requires: ['DISPATCH_TRANSFER'], body: {} },
+  { name: 'receive transfer',    method: 'post', path: '/api/v1/transfers/:masterId/receive', requires: ['RECEIVE_TRANSFER'], body: {} },
+  { name: 'cancel transfer',     method: 'post', path: '/api/v1/transfers/:masterId/cancel',  requires: ['UPDATE_TRANSFER'], body: { reason: 'test' } },
+
+  // ---- Phase 6: serial numbers ----
+  { name: 'list serials',        method: 'get',   path: '/api/v1/serials',                    requires: ['VIEW_SERIAL'] },
+  { name: 'scan a serial',       method: 'get',   path: '/api/v1/serials/scan/ANY-SERIAL',    requires: ['VIEW_SERIAL'] },
+  { name: 'serial history',      method: 'get',   path: '/api/v1/serials/:masterId/history',  requires: ['VIEW_SERIAL'] },
+  { name: 'serial QR code',      method: 'get',   path: '/api/v1/serials/:masterId/qrcode',   requires: ['VIEW_SERIAL'] },
+  { name: 'update serial',       method: 'patch', path: '/api/v1/serials/:masterId',          requires: ['UPDATE_SERIAL'], body: { assetTag: 'T-1' } },
+  { name: 'override serial status', method: 'patch', path: '/api/v1/serials/:masterId/status', requires: ['OVERRIDE_SERIAL_STATUS'], body: {} },
+  { name: 'import serials',      method: 'post',  path: '/api/v1/serials/import',             requires: ['CREATE_SERIAL', 'ADJUST_INVENTORY_UNLIMITED'], body: {} },
 ];
 
 const DENIED_STATUSES = [401, 403];

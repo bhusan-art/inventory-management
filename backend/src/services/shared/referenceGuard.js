@@ -27,7 +27,9 @@ export const REFERENCES = {
     { model: 'PurchaseOrder', field: 'warehouse', label: 'purchase orders' },
     { model: 'GRN', field: 'warehouse', label: 'goods receipts' },
     { model: 'StockCount', field: 'warehouse', label: 'stock counts' },
-    // Phase 5 appends: WarehouseTransfer. Phase 7: DispatchNote.
+    { model: 'WarehouseTransfer', field: 'sourceWarehouse', label: 'outgoing transfers' },
+    { model: 'WarehouseTransfer', field: 'destinationWarehouse', label: 'incoming transfers' },
+    // Phase 7 appends: DispatchNote.
   ],
   Vendor: [
     { model: 'PurchaseOrder', field: 'vendor', label: 'purchase orders' },
@@ -41,6 +43,7 @@ export const REFERENCES = {
     { model: 'SerialNumber', field: 'product', label: 'serial numbers' },
     { model: 'PurchaseOrder', field: 'lines.product', label: 'purchase order lines' },
     { model: 'GRN', field: 'lines.product', label: 'goods receipt lines' },
+    { model: 'WarehouseTransfer', field: 'lines.product', label: 'transfer lines' },
   ],
 };
 

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Inbox, AlertCircle, Loader2 } from 'lucide-react';
 
 /**
@@ -8,7 +9,7 @@ import { ChevronLeft, ChevronRight, Inbox, AlertCircle, Loader2 } from 'lucide-r
  * Columns carrying a `permission` are removed before render — see masterConfig.
  */
 export default function DataTable({
-  columns, rows, meta, loading, error, onPageChange, emptyMessage = 'Nothing here yet',
+  columns, rows, meta, loading, error, onPageChange, rowLink, emptyMessage = 'Nothing here yet',
 }) {
   if (error) {
     return (
@@ -52,11 +53,20 @@ export default function DataTable({
 
             {!loading && rows.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50">
-                {columns.map((c) => (
-                  <td key={c.key} className={`px-4 py-2.5 ${c.mono ? 'font-mono text-xs' : 'text-slate-700'}`}>
-                    {c.status ? <StatusBadge value={row[c.key]} /> : c.render ? c.render(row) : (row[c.key] ?? '—')}
-                  </td>
-                ))}
+                {columns.map((c, i) => {
+                  const content = c.status
+                    ? <StatusBadge value={row[c.key]} />
+                    : c.render ? c.render(row) : (row[c.key] ?? '—');
+                  return (
+                    <td key={c.key} className={`px-4 py-2.5 ${c.mono ? 'font-mono text-xs' : 'text-slate-700'}`}>
+                      {/* Only the first cell links, so the row stays selectable
+                          and copyable rather than being one big click target. */}
+                      {rowLink && i === 0
+                        ? <Link to={rowLink(row)} className="text-slate-900 underline-offset-2 hover:underline">{content}</Link>
+                        : content}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -98,6 +108,18 @@ const TONES = {
   DISCONTINUED: 'bg-amber-50 text-amber-700 border-amber-200',
   BLACKLISTED: 'bg-red-50 text-red-700 border-red-200',
   ON_HOLD: 'bg-amber-50 text-amber-700 border-amber-200',
+  PENDING_APPROVAL: 'bg-amber-50 text-amber-700 border-amber-200',
+  APPROVED: 'bg-blue-50 text-blue-700 border-blue-200',
+  IN_TRANSIT: 'bg-violet-50 text-violet-700 border-violet-200',
+  PARTIALLY_RECEIVED: 'bg-amber-50 text-amber-700 border-amber-200',
+  RECEIVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  POSTED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  COMPLETED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  IN_PROGRESS: 'bg-blue-50 text-blue-700 border-blue-200',
+  CANCELLED: 'bg-slate-100 text-slate-500 border-slate-200',
+  DRAFT: 'bg-slate-100 text-slate-600 border-slate-200',
+  LOCKED: 'bg-red-50 text-red-700 border-red-200',
+  PENDING_ACTIVATION: 'bg-amber-50 text-amber-700 border-amber-200',
 };
 
 export function StatusBadge({ value }) {

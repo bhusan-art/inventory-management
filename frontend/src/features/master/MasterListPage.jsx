@@ -94,6 +94,7 @@ export default function MasterListPage({ entity }) {
         meta={state.meta}
         loading={state.loading}
         error={state.error}
+        rowLink={config.rowLink}
         onPageChange={setPage}
         emptyMessage={search ? 'No records match that search' : `No ${config.title.toLowerCase()} yet`}
       />
