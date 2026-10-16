@@ -1,7 +1,8 @@
 import {
   LayoutDashboard, Package, Tags, Building2, Users, Warehouse,
   Factory, BadgeCheck, Contact, ClipboardList, PackageCheck, Boxes, ClipboardCheck, Truck,
-  ScanLine, ShoppingCart, Send,
+  ScanLine, ShoppingCart, Send, ShieldCheck, Wrench, Undo2, CornerUpLeft, BarChart3,
+  ScrollText,
 } from 'lucide-react';
 
 /**
@@ -30,10 +31,21 @@ export const NAVIGATION = [
   },
 
   {
+    section: 'Service',
+    items: [
+      { label: 'Warranties', to: '/warranties', icon: ShieldCheck, permission: 'VIEW_WARRANTY' },
+      { label: 'Service Requests', to: '/service-requests', icon: Wrench, permission: 'VIEW_SERVICE_REQUEST' },
+      { label: 'Customer Returns', to: '/customer-returns', icon: Undo2, permission: 'VIEW_RETURN' },
+      { label: 'Vendor Returns', to: '/vendor-returns', icon: CornerUpLeft, permission: 'VIEW_RETURN' },
+    ],
+  },
+
+  {
     section: 'Master data',
     items: [
       { label: 'Products', to: '/products', icon: Package, permission: 'VIEW_PRODUCT' },
       { label: 'Categories', to: '/categories', icon: Tags, permission: 'VIEW_CATEGORY' },
+      { label: 'Subcategories', to: '/subcategories', icon: Tags, permission: 'VIEW_CATEGORY' },
       { label: 'Brands', to: '/brands', icon: BadgeCheck, permission: 'VIEW_CATEGORY' },
       { label: 'Manufacturers', to: '/manufacturers', icon: Factory, permission: 'VIEW_CATEGORY' },
       { label: 'Warehouses', to: '/warehouses', icon: Warehouse, permission: 'VIEW_WAREHOUSE' },
@@ -45,7 +57,9 @@ export const NAVIGATION = [
   {
     section: 'Administration',
     items: [
+      { label: 'Reports', to: '/reports', icon: BarChart3, permission: 'VIEW_REPORTS' },
       { label: 'Users', to: '/users', icon: Users, permission: 'VIEW_USER' },
+      { label: 'Audit Trail', to: '/audit-logs', icon: ScrollText, permission: 'VIEW_AUDIT_LOGS' },
     ],
   },
 ];

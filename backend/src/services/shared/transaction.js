@@ -18,7 +18,21 @@ import logger from '../../config/logger.js';
  *     write that forgets it silently escapes the transaction, which is the
  *     hardest bug in this class of system to find later.
  */
-const MAX_ATTEMPTS = 3;
+/**
+ * Five attempts, with jittered backoff.
+ *
+ * Three was chosen when the only expected conflict was genuine contention —
+ * two users claiming the same stock — where a third failure means the caller
+ * really should be told. Slow storage changes the arithmetic: on a filesystem
+ * where a majority write costs 50–160ms, these transactions sit idle 93% of
+ * their lifetime (mongod reports ~143ms inactive against ~11ms active), and the
+ * window for a transient failure is correspondingly wide.
+ *
+ * The jitter matters as much as the count. A fixed 25ms × attempt backoff makes
+ * two colliding requests retry in lockstep and collide again; randomising
+ * breaks the synchronisation.
+ */
+const MAX_ATTEMPTS = 5;
 
 export async function withTransaction(fn, { maxAttempts = MAX_ATTEMPTS } = {}) {
   const session = await mongoose.startSession();
@@ -57,7 +71,9 @@ export async function withTransaction(fn, { maxAttempts = MAX_ATTEMPTS } = {}) {
 
         if (retryable && attempt < maxAttempts) {
           logger.warn({ attempt, code: err.code }, 'Transaction conflict — retrying');
-          await new Promise((r) => setTimeout(r, 25 * attempt));
+          // Exponential with full jitter: 0–50ms, 0–100ms, 0–200ms, 0–400ms.
+          const ceiling = 25 * 2 ** attempt;
+          await new Promise((r) => setTimeout(r, Math.random() * ceiling));
           continue;
         }
         throw err;

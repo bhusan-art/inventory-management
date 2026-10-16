@@ -1,0 +1,38 @@
+# Never let the HOST's dependencies into the image.
+#
+# The Dockerfile installs dependencies in a `deps` stage and copies them in,
+# then runs `COPY . .` for the source. Without this file that second copy
+# merges the host's node_modules ON TOP of the correct install — and COPY
+# merges directories rather than replacing them, so you get half of each tree.
+#
+# On a Windows host that produced:
+#
+#   Cannot start service: Host version "0.28.2" does not match binary
+#   version "0.21.5"
+#
+# esbuild's JavaScript came from Windows, its native binary from the image.
+# Nothing in that message mentions Docker, and the container simply exited.
+node_modules
+**/node_modules
+npm-debug.log*
+
+# Build output — rebuilt inside the image, and stale copies confuse nothing
+# but the person reading them.
+dist
+build
+coverage
+**/dist
+
+# Secrets must never be baked into an image layer. A layer is readable by
+# anyone who can pull it, and deleting the file in a later layer does not
+# remove it from the one before.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+.git
+.gitignore
+.DS_Store

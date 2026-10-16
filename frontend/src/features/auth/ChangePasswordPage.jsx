@@ -40,9 +40,9 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-lg font-semibold text-slate-900">Change your password</h1>
-        <p className="mt-1 text-sm text-slate-500">
+      <div className="w-full max-w-sm rounded-panel border border-line bg-surface p-8 shadow-sm">
+        <h1 className="text-lg font-semibold text-ink">Change your password</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           {session?.mustChangePassword
             ? 'This account still uses a temporary password.'
             : 'Choose a new password.'}
@@ -55,7 +55,7 @@ export default function ChangePasswordPage() {
             ['confirm', 'Confirm new password', 'new-password'],
           ].map(([field, label, autoComplete]) => (
             <div key={field}>
-              <label htmlFor={field} className="block text-sm font-medium text-slate-700">{label}</label>
+              <label htmlFor={field} className="block text-sm font-medium text-ink-soft">{label}</label>
               <input
                 id={field}
                 type="password"
@@ -63,12 +63,12 @@ export default function ChangePasswordPage() {
                 required
                 value={form[field]}
                 onChange={update(field)}
-                className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+                className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
               />
             </div>
           ))}
 
-          <p className="text-xs text-slate-500">At least 12 characters, including letters and numbers.</p>
+          <p className="text-xs text-ink-muted">At least 12 characters, including letters and numbers.</p>
 
           {(localError || error) && (
             <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -82,7 +82,7 @@ export default function ChangePasswordPage() {
           >
             Change password
           </button>
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-ink-muted">
             You will be signed out of all devices afterwards.
           </p>
         </form>

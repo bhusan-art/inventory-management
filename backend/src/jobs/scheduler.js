@@ -3,6 +3,7 @@ import logger from '../config/logger.js';
 import { withJobLock } from './mongoLock.js';
 import { runReconciliation } from './reconciliation.js';
 import { runLowStockScan } from './lowStock.js';
+import { runWarrantyAlerts, runSlaBreachScan } from './warrantyAlerts.js';
 
 /**
  * Scheduled jobs.
@@ -17,6 +18,18 @@ export const JOBS = [
     schedule: '0 3 * * *',
     description: 'Compare inventory against the ledger and report drift',
     handler: runReconciliation,
+  },
+  {
+    name: 'warrantyAlerts',
+    schedule: '0 2 * * *',
+    description: 'Alert on warranties expiring at 30, 15, 7 and 0 days',
+    handler: runWarrantyAlerts,
+  },
+  {
+    name: 'slaBreachScan',
+    schedule: '0 */4 * * *',
+    description: 'Flag open service tickets past their SLA',
+    handler: runSlaBreachScan,
   },
   {
     name: 'lowStockScan',

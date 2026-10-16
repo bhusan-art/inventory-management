@@ -50,7 +50,7 @@ export default function SerialDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (state.loading) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (state.loading) return <p className="text-sm text-ink-muted">Loading…</p>;
   if (state.error) {
     return (
       <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -66,18 +66,18 @@ export default function SerialDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link to="/serials" className="mb-1 flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+          <Link to="/serials" className="mb-1 flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
             <ArrowLeft className="h-3.5 w-3.5" /> All serial numbers
           </Link>
-          <h1 className="font-mono text-lg font-semibold text-slate-900">{serial.serialNumber}</h1>
-          <p className="text-sm text-slate-500">{serial.product?.name}</p>
+          <h1 className="font-mono text-lg font-semibold text-ink">{serial.serialNumber}</h1>
+          <p className="text-sm text-ink-muted">{serial.product?.name}</p>
         </div>
 
         <div className="flex items-center gap-2">
           <StatusBadge value={serial.status} />
           <button
             onClick={() => setShowQr((v) => !v)}
-            className="flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+            className="flex items-center gap-1.5 rounded-control border border-line-strong px-3 py-1.5 text-sm text-ink-soft hover:bg-paper"
           >
             <QrCode className="h-4 w-4" /> QR
           </button>
@@ -91,7 +91,7 @@ export default function SerialDetailPage() {
           <button
             onClick={openLabel}
             disabled={printing}
-            className="flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-control border border-line-strong px-3 py-1.5 text-sm text-ink-soft hover:bg-paper disabled:opacity-60"
           >
             <Printer className="h-4 w-4" /> {printing ? 'Preparing…' : 'Label'}
           </button>
@@ -108,49 +108,49 @@ export default function SerialDetailPage() {
       </div>
 
       {(serial.assetTag || serial.macAddress || serial.imei) && (
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="mb-2 text-sm font-medium text-slate-900">Identifiers</h2>
+        <section className="rounded-panel border border-line bg-surface p-4">
+          <h2 className="mb-2 text-sm font-medium text-ink">Identifiers</h2>
           <dl className="grid gap-3 sm:grid-cols-3">
             {[['Asset tag', serial.assetTag], ['MAC address', serial.macAddress], ['IMEI', serial.imei]]
               .filter(([, v]) => v)
               .map(([label, value]) => (
                 <div key={label}>
-                  <dt className="text-xs text-slate-500">{label}</dt>
-                  <dd className="font-mono text-sm text-slate-900">{value}</dd>
+                  <dt className="text-xs text-ink-muted">{label}</dt>
+                  <dd className="font-mono text-sm text-ink">{value}</dd>
                 </div>
               ))}
           </dl>
         </section>
       )}
 
-      <section className="rounded-lg border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-slate-900">Lifecycle</h2>
-          <p className="text-xs text-slate-500">
+      <section className="rounded-panel border border-line bg-surface">
+        <div className="border-b border-line px-4 py-3">
+          <h2 className="text-sm font-medium text-ink">Lifecycle</h2>
+          <p className="text-xs text-ink-muted">
             {events.length} event{events.length === 1 ? '' : 's'}
             {movements.length > 0 && ` · ${movements.length} stock movement${movements.length === 1 ? '' : 's'}`}
           </p>
         </div>
 
-        <ol className="divide-y divide-slate-100">
+        <ol className="divide-y divide-line/70">
           {events.map((event) => (
             <li key={event.id} className="flex gap-3 px-4 py-3">
               <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-400" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-slate-900">
+                <p className="text-sm text-ink">
                   {event.fromStatus ? `${humanize(event.fromStatus)} → ` : ''}
                   <span className="font-medium">{humanize(event.toStatus)}</span>
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-ink-muted">
                   {humanize(event.eventType)}
                   {event.reference?.number && ` · ${event.reference.number}`}
                   {event.warehouse?.name && ` · ${event.warehouse.name}`}
                 </p>
-                {event.remarks && <p className="mt-1 text-xs text-slate-600">{event.remarks}</p>}
+                {event.remarks && <p className="mt-1 text-xs text-ink-soft">{event.remarks}</p>}
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-xs text-slate-500">{formatDateTime(event.createdAt)}</p>
-                {event.performedBy?.name && <p className="text-xs text-slate-400">{event.performedBy.name}</p>}
+                <p className="text-xs text-ink-muted">{formatDateTime(event.createdAt)}</p>
+                {event.performedBy?.name && <p className="text-xs text-ink-muted">{event.performedBy.name}</p>}
               </div>
             </li>
           ))}
@@ -158,7 +158,7 @@ export default function SerialDetailPage() {
       </section>
 
       {canOverride && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-muted">
           Status corrections are made through the API; every override moves the quantity with it
           and is recorded in the audit log.
         </p>
@@ -179,7 +179,7 @@ function QrPanel({ serialId, serialNumber }) {
   }, [serialId]);
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
+    <div className="flex items-center gap-4 rounded-panel border border-line bg-surface p-4">
       <div className="h-28 w-28">
         {/* The SVG comes from our own authenticated API, generated by the
             qrcode library from a serial number — not from user input. */}
@@ -188,10 +188,10 @@ function QrPanel({ serialId, serialNumber }) {
           : <div className="h-full w-full animate-pulse rounded bg-slate-100" />}
       </div>
       <div>
-        <p className="font-mono text-sm text-slate-900">{serialNumber}</p>
+        <p className="font-mono text-sm text-ink">{serialNumber}</p>
         {/* Says out loud what the code contains, so nobody assumes it holds
             more and builds an offline reader expecting product data. */}
-        <p className="mt-1 max-w-sm text-xs text-slate-500">
+        <p className="mt-1 max-w-sm text-xs text-ink-muted">
           The code contains only the serial number. Scanning it looks the unit up through the
           API, so nothing about the product, customer or location is readable from the label
           itself.
@@ -203,12 +203,12 @@ function QrPanel({ serialId, serialNumber }) {
 
 function Fact({ icon: Icon, label, value, sub }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+    <div className="rounded-panel border border-line bg-surface p-4">
+      <div className="flex items-center gap-1.5 text-xs text-ink-muted">
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
-      <p className="mt-1 truncate text-sm font-medium text-slate-900">{value ?? '—'}</p>
-      {sub && <p className="truncate text-xs text-slate-500">{sub}</p>}
+      <p className="mt-1 truncate text-sm font-medium text-ink">{value ?? '—'}</p>
+      {sub && <p className="truncate text-xs text-ink-muted">{sub}</p>}
     </div>
   );
 }

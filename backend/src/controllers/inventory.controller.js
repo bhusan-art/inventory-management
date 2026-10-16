@@ -133,23 +133,40 @@ export const lowStock = asyncHandler(async (req, res) => {
 
 export const listNotifications = asyncHandler(async (req, res) => {
   const { items, meta } = await notificationService.listNotifications(req.actor, {
-    unreadOnly: req.query.unreadOnly === true,
+    unreadOnly: req.query.unreadOnly === true || req.query.unreadOnly === 'true',
+    severity: req.query.severity,
+    type: req.query.type,
     page: Number(req.query.page) || 1,
     limit: Number(req.query.limit) || 25,
   });
   return ok(res, {
-    data: items.map((n) => ({
+    // `read` is computed for THIS reader. There is no `readAt` on the payload
+    // any more: a permission-addressed notification has as many read states as
+    // it has recipients, and a single timestamp could only ever describe one.
+    data: items.map(({ doc: n, read }) => ({
       id: String(n._id),
       type: n.type,
       title: n.title,
       body: n.body ?? null,
       severity: n.severity,
+      module: n.module ?? null,
+      recordId: n.recordId ? String(n.recordId) : null,
       actionUrl: n.actionUrl ?? null,
-      readAt: n.readAt ?? null,
+      read,
       createdAt: n.createdAt,
     })),
     meta,
   });
+});
+
+export const unreadNotificationCount = asyncHandler(async (req, res) => {
+  const unread = await notificationService.unreadCount(req.actor);
+  return ok(res, { data: { unread } });
+});
+
+export const unreadNotification = asyncHandler(async (req, res) => {
+  await notificationService.markUnread(req.actor, req.params.id);
+  return ok(res, { message: 'Marked as unread' });
 });
 
 export const readNotification = asyncHandler(async (req, res) => {

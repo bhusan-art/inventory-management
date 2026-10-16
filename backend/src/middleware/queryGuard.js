@@ -34,7 +34,11 @@ function collectKeys(query = {}) {
 }
 
 export function queryGuard(modelName) {
-  return function guard(req, res, next) {
+  // `async` so the audit write below can be awaited. It was a floating
+  // promise: nothing held it, so a failed write vanished silently and an
+  // unhandled rejection could outlive the request — and a probe at a
+  // restricted field is precisely the event worth having on record.
+  return async function guard(req, res, next) {
     const permissions = req.actor?.permissions ?? new Set();
     const denied = [];
 
@@ -45,7 +49,7 @@ export function queryGuard(modelName) {
 
     if (denied.length === 0) return next();
 
-    writeAudit({
+    await writeAudit({
       action: 'RESTRICTED_FIELD_QUERY_DENIED',
       module: modelName.toUpperCase(),
       severity: 'WARNING',

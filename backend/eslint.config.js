@@ -7,7 +7,7 @@ export default [
   js.configs.recommended,
 
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
@@ -82,6 +82,13 @@ export default [
         })),
       ],
     },
+  },
+
+  {
+    // CI check scripts report to the terminal and set an exit code; that is
+    // their whole job, so `console` and `process` are not smells here.
+    files: ['scripts/**/*.mjs'],
+    rules: { 'no-console': 'off' },
   },
 
   {

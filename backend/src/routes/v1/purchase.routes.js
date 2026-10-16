@@ -105,3 +105,6 @@ notificationRouter.use(authenticate);
 notificationRouter.get('/', inventoryController.listNotifications);
 notificationRouter.patch('/:id/read', validate({ params: idParamSchema }), inventoryController.readNotification);
 notificationRouter.post('/read-all', inventoryController.readAllNotifications);
+notificationRouter.get('/unread-count', inventoryController.unreadNotificationCount);
+// Undo, because a mis-click on "mark all read" should not be permanent.
+notificationRouter.patch('/:id/unread', validate({ params: idParamSchema }), inventoryController.unreadNotification);

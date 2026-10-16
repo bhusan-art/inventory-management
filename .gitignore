@@ -2,9 +2,38 @@ node_modules/
 dist/
 build/
 coverage/
+
+# ---------------------------------------------------------------------------
+# Secrets.
+#
+# `.env` alone did NOT cover `.env.production`: gitignore patterns are literal,
+# and `.env.*.local` matches only `.env.something.local`. So the one file in
+# this repository holding the database password, both JWT secrets and the
+# production hostname was tracked. Phase 12 created that file, which is how it
+# came to light.
+#
+# The pattern is now "ignore every .env variant, then un-ignore the examples",
+# rather than a list of the variants anyone has thought of so far.
+# ---------------------------------------------------------------------------
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+
+# TLS private keys and the MongoDB replica-set keyfile. A keyfile in version
+# control is a shared secret that is no longer secret, and rotating it means
+# restarting the replica set.
+*.pem
+*.key
+*.crt
+docker/mongo-keyfile
+docker/certs/*
+!docker/certs/README.md
+
+# Backups. These contain the entire database and every uploaded document —
+# the most sensitive artefact the project produces.
+backups/
+
 *.log
 npm-debug.log*
 backend/storage/*

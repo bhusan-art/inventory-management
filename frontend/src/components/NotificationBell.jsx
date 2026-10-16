@@ -6,7 +6,7 @@ const ICONS = {
   CRITICAL: { Icon: AlertTriangle, tone: 'text-red-600' },
   WARNING: { Icon: AlertCircle, tone: 'text-amber-600' },
   NOTICE: { Icon: Info, tone: 'text-blue-600' },
-  INFO: { Icon: Info, tone: 'text-slate-500' },
+  INFO: { Icon: Info, tone: 'text-ink-muted' },
 };
 
 /**
@@ -46,7 +46,7 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100"
+        className="relative rounded-control border border-line-strong p-1.5 text-ink-soft hover:bg-paper"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
       >
         <Bell className="h-4 w-4" />
@@ -58,11 +58,11 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-slate-200 bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
-            <p className="text-sm font-medium text-slate-900">Notifications</p>
+        <div className="absolute right-0 z-20 mt-2 w-80 rounded-panel border border-line bg-surface shadow-lg">
+          <div className="flex items-center justify-between border-b border-line px-4 py-2">
+            <p className="text-sm font-medium text-ink">Notifications</p>
             {unread > 0 && (
-              <button onClick={markAll} className="text-xs text-slate-500 hover:text-slate-900">
+              <button onClick={markAll} className="text-xs text-ink-muted hover:text-ink">
                 Mark all read
               </button>
             )}
@@ -70,7 +70,7 @@ export default function NotificationBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {items.length === 0 && (
-              <p className="px-4 py-8 text-center text-sm text-slate-500">Nothing to report</p>
+              <p className="px-4 py-8 text-center text-sm text-ink-muted">Nothing to report</p>
             )}
 
             {items.map((n) => {
@@ -78,12 +78,12 @@ export default function NotificationBell() {
               return (
                 <div
                   key={n.id}
-                  className={`flex gap-2.5 border-b border-slate-100 px-4 py-3 ${n.readAt ? 'opacity-60' : ''}`}
+                  className={`flex gap-2.5 border-b border-slate-100 px-4 py-3 ${n.read ? 'opacity-60' : ''}`}
                 >
                   <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${tone}`} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900">{n.title}</p>
-                    {n.body && <p className="mt-0.5 text-xs text-slate-600">{n.body}</p>}
+                    <p className="text-sm font-medium text-ink">{n.title}</p>
+                    {n.body && <p className="mt-0.5 text-xs text-ink-soft">{n.body}</p>}
                   </div>
                 </div>
               );

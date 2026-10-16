@@ -1,22 +1,56 @@
 import mongoose from 'mongoose';
+import { DOCUMENT_ENTITIES, DOCUMENT_CATEGORIES, ALLOWED_MIME_TYPES } from '../constants/documents.js';
 
+/**
+ * A file attached to a record.
+ *
+ * Two names, deliberately:
+ *
+ *   originalName  what the uploader called it. DISPLAY ONLY. Never touches a
+ *                 filesystem path, because it is attacker-controlled — the
+ *                 classic payload being "../../etc/passwd" or a 300-character
+ *                 name that breaks whatever concatenates it.
+ *   storageKey    what we called it: a random name we generated, relative to
+ *                 the storage root, with the extension derived from the
+ *                 VERIFIED type rather than from anything the client said.
+ *
+ * Keeping them apart is what makes path traversal structurally impossible
+ * rather than something a validator has to catch.
+ */
 const documentSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true, index: true },
 
-    fileName: { type: String, required: true, trim: true, maxlength: 255 },
-    storageKey: { type: String, required: true, unique: true },
-    mimeType: { type: String, required: true },
+    entityType: { type: String, enum: DOCUMENT_ENTITIES, required: true },
+    entityId: { type: mongoose.Schema.Types.ObjectId, required: true },
+
+    category: { type: String, enum: DOCUMENT_CATEGORIES, default: 'OTHER' },
+    title: { type: String, trim: true, maxlength: 200 },
+    description: { type: String, trim: true, maxlength: 1000 },
+
+    originalName: { type: String, required: true, maxlength: 400 },
+    storageKey: { type: String, required: true },
+
+    mimeType: { type: String, enum: ALLOWED_MIME_TYPES, required: true },
     sizeBytes: { type: Number, required: true, min: 0 },
-    /** Deduplicates uploads and detects tampering. */
-    checksumSha256: { type: String, required: true, index: true },
 
-    module: { type: String, required: true, index: true },
-    recordId: { type: mongoose.Schema.Types.ObjectId, default: null },
-    documentType: { type: String, trim: true, maxlength: 60, default: null },
+    /**
+     * SHA-256 of the contents.
+     *
+     * Earns its place twice: it detects the same file uploaded twice, and it
+     * detects a stored file that has changed underneath us, which is the only
+     * way to notice disk corruption or tampering after the fact.
+     */
+    checksum: { type: String, required: true, index: true },
 
-    /** Gated behind VIEW_RESTRICTED_DOCUMENTS at download. */
-    isRestricted: { type: Boolean, default: false },
+    /**
+     * Restricted documents need VIEW_RESTRICTED_DOCUMENTS to download.
+     *
+     * The flag is on the document and not the category, because sensitivity is
+     * a property of the particular file. One inspection report is routine;
+     * another names an employee.
+     */
+    isRestricted: { type: Boolean, default: false, index: true },
 
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
@@ -26,7 +60,10 @@ const documentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-documentSchema.index({ tenantId: 1, module: 1, recordId: 1 });
+// The query every document list makes.
+documentSchema.index({ tenantId: 1, entityType: 1, entityId: 1, deletedAt: 1 });
+// Duplicate detection within a tenant.
+documentSchema.index({ tenantId: 1, checksum: 1 });
 
-export const Document = mongoose.model('Document', documentSchema);
-export default Document;
+export const DocumentFile = mongoose.model('Document', documentSchema);
+export default DocumentFile;

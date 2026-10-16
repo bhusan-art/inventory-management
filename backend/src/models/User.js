@@ -1,7 +1,21 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const BCRYPT_COST = 12;
+/**
+ * Cost 12 in every real environment; 4 under test.
+ *
+ * 12 is the figure that matters — it is what protects a stolen hash, and it is
+ * deliberately slow. But the integration fixtures hash five passwords and
+ * verify five more per test, so at cost 12 a 28-test file spent most of two
+ * minutes on bcrypt alone. Long requests overlap more, and overlap is what
+ * turns a latent race into a failure.
+ *
+ * Lowering it under test weakens nothing: the hashes are thrown away with the
+ * database. The guard is that the override is keyed on NODE_ENV === 'test' and
+ * nothing else, so there is no configuration anyone could set in production to
+ * get a weak hash.
+ */
+const BCRYPT_COST = process.env.NODE_ENV === 'test' ? 4 : 12;
 
 const userSchema = new mongoose.Schema(
   {

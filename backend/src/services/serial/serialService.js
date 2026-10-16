@@ -49,7 +49,7 @@ export async function transition({
     customer: serial.customer,
     performedBy: actor.id,
     remarks,
-  }], { session });
+  }], { session, ordered: true });
 
   return serial;
 }
@@ -123,7 +123,12 @@ export async function createForReceipt({
       warehouse,
       performedBy: actor.id,
     })),
-    { session },
+    // `ordered: true` is MANDATORY for a multi-document create inside a
+    // session — Mongoose refuses outright without it. Its absence here is why
+    // posting a GRN with two or more serialized units returned a 500. ONE unit
+    // worked, which is exactly why it went unnoticed for five phases: every
+    // manual check and every earlier fixture used a single serial.
+    { session, ordered: true },
   );
 
   return created;

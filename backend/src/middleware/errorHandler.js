@@ -38,6 +38,35 @@ function normalize(err) {
     });
   }
 
+  /**
+   * body-parser failures. These are the CLIENT's fault and were being reported
+   * as 500 INTERNAL_ERROR — so a truncated upload or a stray comma woke
+   * whoever was on call, burned the error budget, and told the client nothing
+   * it could act on because production replaces a 5xx message with "An
+   * unexpected error occurred".
+   *
+   * They never reach a validator: express.json throws while reading the body,
+   * before any route or schema has been chosen.
+   */
+  if (err.type === 'entity.too.large') {
+    return new AppError('Request body is too large', {
+      statusCode: 413,
+      code: 'PAYLOAD_TOO_LARGE',
+      details: [{ code: 'PAYLOAD_TOO_LARGE', limit: err.limit }],
+    });
+  }
+
+  if (err.type === 'entity.parse.failed' || (err instanceof SyntaxError && 'body' in err)) {
+    return new AppError('Request body is not valid JSON', {
+      statusCode: 400,
+      code: 'MALFORMED_BODY',
+    });
+  }
+
+  if (err.type === 'encoding.unsupported' || err.type === 'charset.unsupported') {
+    return new AppError('Unsupported request encoding', { statusCode: 415, code: 'UNSUPPORTED_ENCODING' });
+  }
+
   // Transient transaction failures that survived the retry helper.
   if (err.errorLabels?.includes('TransientTransactionError')) {
     return new AppError('The operation could not be completed due to concurrent activity. Please retry.', {
@@ -69,6 +98,14 @@ export function errorHandler(err, req, res, _next) {
 
   const body = {
     success: false,
+    // The stable machine code travels in the RESPONSE, not just the log.
+    //
+    // ARCHITECTURE.md says clients and tests match on codes and never on
+    // message text — but until Phase 8 the code was only ever logged, so there
+    // was nothing to match on unless the error happened to carry `details`.
+    // Phase 8's tests were the first thing to actually try, and they got
+    // `undefined`. Wording stays free to change only if the code ships with it.
+    code: error.code,
     message: error.statusCode >= 500 && env.isProduction ? 'An unexpected error occurred' : error.message,
     errors: error.details ?? [],
   };

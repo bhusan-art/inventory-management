@@ -8,6 +8,7 @@ import { SerialNumber } from '../../models/SerialNumber.js';
 import { withTransaction } from '../shared/transaction.js';
 import { nextDocumentNumber } from '../shared/counterService.js';
 import { writeAudit } from '../shared/auditService.js';
+import { notify } from '../shared/notificationService.js';
 import { applyMovement } from '../inventory/ledgerService.js';
 import * as serialService from '../serial/serialService.js';
 import { assertWarehouseInScope, warehouseScopeFilter } from '../shared/scopeService.js';
@@ -102,7 +103,22 @@ export async function createDispatch(actor, payload, { idempotencyKey } = {}) {
     const byId = new Map(products.map((p) => [String(p._id), p]));
 
     const dispatchDate = payload.dispatchDate ? new Date(payload.dispatchDate) : new Date();
-    const dispatchNoteNumber = await nextDocumentNumber('DN');
+    // `{ session }` is not optional here. Without it this upsert runs OUTSIDE
+    // the transaction it sits inside, and two things go wrong.
+    //
+    // It writes the `counters` collection non-transactionally; the transaction
+    // then upserts the TXN counter in that same collection through
+    // ledgerService, at a snapshot taken before this insert committed. The
+    // transactional write conflicts, gets labelled TransientTransactionError,
+    // and the retry repeats the whole thing — three attempts, then a 409.
+    // Dispatch was the only endpoint mixing a sessioned and an un-sessioned
+    // counter write in one transaction, which is why it was the only one
+    // failing.
+    //
+    // And the number itself leaked: an un-sessioned `$inc` is not rolled back
+    // when the transaction aborts, so every retry burned a dispatch note
+    // number. A sequence with silent gaps is not much of an audit trail.
+    const dispatchNoteNumber = await nextDocumentNumber('DN', { session });
     const preparedLines = [];
     const warrantiesToCreate = [];
 
@@ -218,7 +234,7 @@ export async function createDispatch(actor, payload, { idempotencyKey } = {}) {
       remarks: payload.remarks ?? null,
       status: 'DISPATCHED',
       createdBy: actor.id,
-    }], { session });
+    }], { session, ordered: true });
 
     // Warranty starts on dispatch, not on order date: cover begins when the
     // customer has the goods.
@@ -238,7 +254,7 @@ export async function createDispatch(actor, payload, { idempotencyKey } = {}) {
         provider: 'MANUFACTURER',
         state: 'ACTIVE',
         createdBy: actor.id,
-      }], { session });
+      }], { session, ordered: true });
 
       item.serial.currentWarranty = warranty._id;
       item.serial.dispatchNote = note._id;
@@ -249,6 +265,19 @@ export async function createDispatch(actor, payload, { idempotencyKey } = {}) {
       order.recalculateStatus();
       await order.save({ session });
     }
+
+    onCommit(() => notify({
+      tenantId: actor.tenantId,
+      type: 'DISPATCH_AWAITING_DELIVERY',
+      title: `${note.dispatchNoteNumber} dispatched to ${customer.customerName}`,
+      body: 'Stock has left the warehouse. Record the delivery once it is signed for.',
+      severity: 'NOTICE',
+      recipientPermission: 'CREATE_DISPATCH',
+      module: 'DispatchNote',
+      recordId: note._id,
+      actionUrl: `/dispatch-notes/${note._id}`,
+      dedupeKey: `DISPATCH_SENT:${note._id}`,
+    }));
 
     onCommit(() => writeAudit({
       action: 'GOODS_DISPATCHED', module: 'DispatchNote', recordId: note._id,

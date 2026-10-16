@@ -9,6 +9,7 @@ import { InventoryTransaction } from '../../models/InventoryTransaction.js';
 import { withTransaction } from '../shared/transaction.js';
 import { nextDocumentNumber } from '../shared/counterService.js';
 import { writeAudit } from '../shared/auditService.js';
+import { notify } from '../shared/notificationService.js';
 import { applyMovement } from '../inventory/ledgerService.js';
 import * as serialService from '../serial/serialService.js';
 import { assertWarehouseInScope } from '../shared/scopeService.js';
@@ -363,6 +364,33 @@ export async function postGrn(actor, id) {
     grn.postedAt = new Date();
     grn.postedBy = actor.id;
     await grn.save({ session });
+
+    /**
+     * Only when something was WRONG with the delivery.
+     *
+     * A clean receipt needs no alert — the stock figure already changed and
+     * anyone interested can see it. Damage or rejection is different: somebody
+     * has to raise it with the vendor, and nothing else in the system will
+     * remind them. Notifying on every receipt is how a notification list
+     * becomes wallpaper.
+     */
+    const damaged = grn.lines.reduce((sum, l) => sum + l.damagedQuantity, 0);
+    const rejected = grn.lines.reduce((sum, l) => sum + l.rejectedQuantity, 0);
+
+    if (damaged + rejected > 0) {
+      onCommit(() => notify({
+        tenantId: actor.tenantId,
+        type: 'GRN_DAMAGE_RECORDED',
+        title: `${grn.grnNumber} received with ${damaged} damaged, ${rejected} rejected`,
+        body: 'Raise this with the vendor — nothing else will chase it.',
+        severity: 'WARNING',
+        recipientPermission: 'VIEW_GRN',
+        module: 'GRN',
+        recordId: grn._id,
+        actionUrl: '/grn',
+        dedupeKey: `GRN_DAMAGE:${grn._id}`,
+      }));
+    }
 
     // Runs only after the commit — an audit write that fails must never roll
     // back a stock movement that already happened.

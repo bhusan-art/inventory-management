@@ -1,4 +1,5 @@
 import asyncHandler from '../utils/asyncHandler.js';
+import { warrantyStatus, daysRemaining } from '../utils/dates.js';
 import { ok } from '../utils/response.js';
 import { SerialNumber } from '../models/SerialNumber.js';
 import * as query from '../services/serial/serialQueryService.js';
@@ -74,6 +75,19 @@ export const scan = asyncHandler(async (req, res) => {
       countsAsStock: result.countsAsStock,
       allowedTransitions: result.allowedTransitions,
       movementCount: result.ledgerCount,
+      // "Is this still covered?" is the first question asked of a scanned unit,
+      // so the answer travels with the scan rather than needing a second call.
+      // Status is computed here, as everywhere — nothing stores it.
+      warranty: result.serial.currentWarranty && typeof result.serial.currentWarranty === 'object'
+        ? {
+            id: String(result.serial.currentWarranty._id),
+            warrantyNumber: result.serial.currentWarranty.warrantyNumber,
+            endDate: result.serial.currentWarranty.endDate,
+            state: result.serial.currentWarranty.state,
+            status: warrantyStatus(result.serial.currentWarranty),
+            daysRemaining: daysRemaining(result.serial.currentWarranty),
+          }
+        : null,
       recentEvents: result.recentEvents.map(serializeEvent),
     },
   });

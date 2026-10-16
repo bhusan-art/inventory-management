@@ -35,12 +35,15 @@ export const REFERENCES = {
   Vendor: [
     { model: 'PurchaseOrder', field: 'vendor', label: 'purchase orders' },
     { model: 'GRN', field: 'vendor', label: 'goods receipts' },
+    { model: 'VendorReturn', field: 'vendor', label: 'returns to them' },
   ],
   Customer: [
     { model: 'SalesOrder', field: 'customer', label: 'sales orders' },
     { model: 'DispatchNote', field: 'customer', label: 'dispatch notes' },
     { model: 'Warranty', field: 'customer', label: 'warranties' },
     { model: 'SerialNumber', field: 'customer', label: 'units they hold' },
+    { model: 'ServiceRequest', field: 'customer', label: 'service tickets' },
+    { model: 'CustomerReturn', field: 'customer', label: 'returns' },
   ],
   Product: [
     { model: 'Inventory', field: 'product', label: 'inventory records' },

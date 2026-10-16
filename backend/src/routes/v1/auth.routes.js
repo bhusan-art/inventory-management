@@ -1,28 +1,15 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
 import * as controller from '../../controllers/auth.controller.js';
 import authenticate from '../../middleware/authenticate.js';
 import validate from '../../middleware/validate.js';
-import env from '../../config/env.js';
+import { credentialLimiter as makeCredentialLimiter } from '../../middleware/rateLimit.js';
 import {
   loginSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema,
 } from '../../validators/auth.schema.js';
 
 const router = Router();
 
-/**
- * Credential endpoints are rate limited far more tightly than the global
- * ceiling. The threat here is credential stuffing — thousands of attempts
- * across many accounts — which sits well inside a 300/min general limit.
- */
-const credentialLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: env.isTest ? 100_000 : 5,
-  skipSuccessfulRequests: true,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many attempts. Try again shortly.', errors: [{ code: 'RATE_LIMITED' }] },
-});
+const credentialLimiter = makeCredentialLimiter();
 
 router.post('/login', credentialLimiter, validate(loginSchema), controller.login);
 router.post('/refresh', controller.refresh);

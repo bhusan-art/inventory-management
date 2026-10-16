@@ -12,7 +12,7 @@ import { ForbiddenError, UnauthenticatedError } from '../utils/errors.js';
 export function requirePermission(...codes) {
   codes.forEach(assertKnownPermission);
 
-  return function permissionGate(req, res, next) {
+  function permissionGate(req, res, next) {
     if (!req.actor) return next(new UnauthenticatedError());
 
     const missing = codes.filter((c) => !req.actor.permissions.has(c));
@@ -26,20 +26,19 @@ export function requirePermission(...codes) {
       );
     }
     return next();
-  };
-}
+  }
 
-/** Passes when the actor holds at least one of the listed permissions. */
-export function requireAnyPermission(...codes) {
-  codes.forEach(assertKnownPermission);
+  /**
+   * The codes, readable from outside.
+   *
+   * The OpenAPI generator walks the live router and needs to say which
+   * permission each route demands. A closure's captured values cannot be
+   * recovered from its source, and a second hand-maintained list would drift
+   * from the routes it claims to describe — so the gate carries its own answer.
+   */
+  permissionGate.requiredPermissions = Object.freeze([...codes]);
 
-  return function anyPermissionGate(req, res, next) {
-    if (!req.actor) return next(new UnauthenticatedError());
-    if (codes.some((c) => req.actor.permissions.has(c))) return next();
-    return next(
-      new ForbiddenError('You do not have permission to perform this action', 'PERMISSION_DENIED'),
-    );
-  };
+  return permissionGate;
 }
 
 export default requirePermission;

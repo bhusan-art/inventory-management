@@ -6,6 +6,7 @@ import { SerialNumber } from '../../models/SerialNumber.js';
 import { withTransaction } from '../shared/transaction.js';
 import { nextDocumentNumber } from '../shared/counterService.js';
 import { writeAudit } from '../shared/auditService.js';
+import { notify } from '../shared/notificationService.js';
 import { moveBetweenBuckets } from '../inventory/ledgerService.js';
 import * as serialService from '../serial/serialService.js';
 import { assertWarehouseInScope, warehouseScopeFilter } from '../shared/scopeService.js';
@@ -104,6 +105,19 @@ export async function createSalesOrder(actor, payload) {
     createdBy: actor.id,
   });
 
+  await notify({
+    tenantId: actor.tenantId,
+    type: 'SALES_ORDER_PENDING_CONFIRMATION',
+    title: `Sales order ${order.salesOrderNumber} awaits confirmation`,
+    body: 'No stock is reserved until it is confirmed, so another order can take the same units.',
+    severity: 'NOTICE',
+    recipientPermission: 'CONFIRM_SALES_ORDER',
+    module: 'SalesOrder',
+    recordId: order._id,
+    actionUrl: `/sales-orders/${order._id}`,
+    dedupeKey: `SO_PENDING:${order._id}`,
+  });
+
   await writeAudit({
     action: 'SALES_ORDER_CREATED', module: 'SalesOrder', recordId: order._id,
     recordLabel: order.salesOrderNumber, severity: 'NOTICE', tenantId: actor.tenantId,
@@ -193,6 +207,21 @@ export async function confirmSalesOrder(actor, id, { serialSelections = [] } = {
     order.confirmedBy = actor.id;
     order.confirmedAt = new Date();
     await order.save({ session });
+
+    // Inside onCommit: a notification for a reservation that rolled back
+    // would send someone to pick stock that was never set aside.
+    onCommit(() => notify({
+      tenantId: actor.tenantId,
+      type: 'SALES_ORDER_READY_TO_DISPATCH',
+      title: `Sales order ${order.salesOrderNumber} is confirmed`,
+      body: 'Stock is reserved and the order can be dispatched.',
+      severity: 'NOTICE',
+      recipientPermission: 'CREATE_DISPATCH',
+      module: 'SalesOrder',
+      recordId: order._id,
+      actionUrl: `/dispatch-notes/new?order=${order._id}`,
+      dedupeKey: `SO_CONFIRMED:${order._id}`,
+    }));
 
     onCommit(() => writeAudit({
       action: 'SALES_ORDER_CONFIRMED', module: 'SalesOrder', recordId: order._id,

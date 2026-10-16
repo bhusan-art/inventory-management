@@ -4,6 +4,7 @@ import { Vendor } from '../../models/Vendor.js';
 import { Warehouse } from '../../models/Warehouse.js';
 import { nextDocumentNumber } from '../shared/counterService.js';
 import { writeAudit, diff } from '../shared/auditService.js';
+import { notify } from '../shared/notificationService.js';
 import { assertWarehouseInScope, warehouseScopeFilter } from '../shared/scopeService.js';
 import { NotFoundError, DomainError } from '../../utils/errors.js';
 import { parseSort } from '../../validators/common.schema.js';
@@ -93,6 +94,22 @@ export async function createPurchaseOrder(actor, payload) {
     recordLabel: po.poNumber, severity: 'NOTICE', tenantId: actor.tenantId,
   });
 
+  // Addressed to the PERMISSION, not a person: whoever can approve should see
+  // it, and an order waiting in one named individual's inbox is how orders sit
+  // unapproved for a week.
+  await notify({
+    tenantId: actor.tenantId,
+    type: 'PO_PENDING_APPROVAL',
+    title: `Purchase order ${po.poNumber} awaits approval`,
+    body: 'Nothing can be received against it until it is approved.',
+    severity: 'NOTICE',
+    recipientPermission: 'APPROVE_PURCHASE_ORDER',
+    module: 'PurchaseOrder',
+    recordId: po._id,
+    actionUrl: `/purchase-orders/${po._id}`,
+    dedupeKey: `PO_PENDING:${po._id}`,
+  });
+
   return getPurchaseOrder(actor, po._id);
 }
 
@@ -163,6 +180,19 @@ export async function approvePurchaseOrder(actor, id) {
   await writeAudit({
     action: 'PURCHASE_ORDER_APPROVED', module: 'PurchaseOrder', recordId: po._id,
     recordLabel: po.poNumber, severity: 'CRITICAL', tenantId: actor.tenantId,
+  });
+
+  await notify({
+    tenantId: actor.tenantId,
+    type: 'PO_READY_TO_RECEIVE',
+    title: `Purchase order ${po.poNumber} is approved`,
+    body: 'Goods can now be received against it.',
+    severity: 'INFO',
+    recipientPermission: 'CREATE_GRN',
+    module: 'PurchaseOrder',
+    recordId: po._id,
+    actionUrl: `/grn/new?po=${po._id}`,
+    dedupeKey: `PO_APPROVED:${po._id}`,
   });
 
   return getPurchaseOrder(actor, po._id);

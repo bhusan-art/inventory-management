@@ -9,19 +9,51 @@
  * A link that goes nowhere is a bug the app will never report on its own. This
  * check makes it one CI will.
  */
+import { readFileSync } from 'node:fs';
 import { NAVIGATION } from '../src/constants/navigation.js';
 import { MASTER_CONFIGS } from '../src/features/master/masterConfig.js';
 
-// Routes defined directly in app/routes.jsx rather than generated from config.
-const STANDALONE_ROUTES = new Set(['/']);
+/**
+ * The standalone routes are READ FROM THE ROUTER, not listed here.
+ *
+ * They used to be a hand-maintained `STANDALONE_ROUTES` set — which is the
+ * same defect this script exists to catch, one level up. Adding a route and
+ * its sidebar link correctly still failed the check until somebody remembered
+ * to update a third list, and the obvious way to make the check pass is to add
+ * the path here rather than to add the route. A guard that can be satisfied
+ * without fixing anything is worse than no guard.
+ *
+ * Parsing the file is cheap and cannot drift: a path reaches this set only by
+ * existing in `routes.jsx`.
+ */
+const routerSource = readFileSync(new URL('../src/app/routes.jsx', import.meta.url), 'utf8');
+const declared = [...routerSource.matchAll(/path=(?:"([^"]+)"|\{`([^`$]+)`\})/g)]
+  .map((m) => m[1] ?? m[2])
+  .filter((p) => p.startsWith('/') && !p.includes('*') && !p.includes(':'));
+
+if (declared.length === 0) {
+  console.error('Parsed no routes out of routes.jsx — the pattern has gone stale.');
+  process.exit(1);
+}
 
 const links = NAVIGATION.flatMap((entry) => (entry.section ? entry.items : [entry]));
-const routed = new Set([...STANDALONE_ROUTES, ...Object.keys(MASTER_CONFIGS).map((k) => `/${k}`)]);
+const routed = new Set([...declared, ...Object.keys(MASTER_CONFIGS).map((k) => `/${k}`)]);
 
 const dead = links.filter((l) => !routed.has(l.to));
 
-// The reverse is also worth knowing: a screen nobody can navigate to.
-const linked = new Set(links.map((l) => l.to));
+/**
+ * The reverse is also worth knowing: a screen nobody can navigate to.
+ *
+ * "Linked" means more than the sidebar. A screen reached by a button on
+ * another screen — "New order" on the purchase order list — is reachable, and
+ * reporting it as URL-only trains people to ignore this section, which is
+ * where a genuinely orphaned screen would appear.
+ */
+const headerActions = Object.values(MASTER_CONFIGS)
+  .map((c) => c.headerAction?.to)
+  .filter(Boolean);
+
+const linked = new Set([...links.map((l) => l.to), ...headerActions]);
 const orphaned = [...routed].filter((r) => !linked.has(r));
 
 // And a link must be gated by the same permission as the screen it opens,

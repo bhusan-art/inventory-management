@@ -54,7 +54,7 @@ export default function ScanBar() {
 
   return (
     <form onSubmit={submit} className="relative hidden sm:block">
-      <ScanLine className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+      <ScanLine className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-ink-muted" />
       <input
         ref={inputRef}
         value={value}
@@ -62,10 +62,10 @@ export default function ScanBar() {
         placeholder="Scan a serial number…"
         aria-label="Scan a serial number"
         className={`w-60 rounded border py-2 pl-8 pr-8 text-sm focus:outline-none ${
-          error ? 'border-red-300 bg-red-50' : 'border-slate-300 focus:border-slate-500'
+          error ? 'border-red-300 bg-red-50' : 'border-line-strong focus:border-slate-500'
         }`}
       />
-      {busy && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-slate-400" />}
+      {busy && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-ink-muted" />}
       {error && <p className="absolute left-0 top-full mt-1 text-xs text-red-600">{error}</p>}
     </form>
   );

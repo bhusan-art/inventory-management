@@ -131,7 +131,7 @@ export async function applyMovement({
     reasonCode,
     performedBy: actor.id,
     remarks,
-  }], { session });
+  }], { session, ordered: true });
 
   return entry;
 }
@@ -203,7 +203,7 @@ export async function moveBetweenBuckets({
     reasonCode,
     performedBy: actor.id,
     remarks,
-  }], { session });
+  }], { session, ordered: true });
 
   return entry;
 }

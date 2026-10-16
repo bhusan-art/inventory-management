@@ -1,3 +1,95 @@
+/*
+ * Only the weights actually used, self-hosted.
+ *
+ * Linked from Google would be one line less, but this runs on sites that are
+ * sometimes behind a firewall or fully offline — a webfont that silently fails
+ * to load there drops the whole interface back to a system face, and nobody
+ * reports it because the screen still "works". Vendored, there is nothing to
+ * fail.
+ *
+ * IBM Plex, not a default UI sans: it was drawn for technical documentation,
+ * its numerals are unambiguous at small sizes, and its mono is a true sibling
+ * rather than a borrowed face. That matters here because this application is
+ * mostly identifiers — SRV-DELL-R760, WH-HYD, DN/2026-27/00001 — read and
+ * typed character by character.
+ */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Steel, not slate: slate's blue cast reads cold and generic. */
+    --ink: #15202b;
+    --ink-soft: #4a5862;
+    --ink-muted: #76828b;
+
+    --paper: #f6f7f8;
+    --surface: #ffffff;
+    --line: #dfe3e6;
+    --line-strong: #c8ced3;
+
+    /* Taken from the validated chart palette so the charts and the chrome
+       are one system rather than two that nearly match. */
+    --accent: #1c5cab;
+    --accent-hover: #184f95;
+    --accent-soft: #e9f0fa;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  /*
+   * Lining, tabular figures everywhere.
+   *
+   * Quantities sit in columns and get compared down the page; proportional
+   * numerals make 1,240 and 1,180 different widths and the column stops
+   * lining up. This is the whole reason a warehouse screen feels steadier
+   * than a marketing page.
+   */
+  body,
+  input,
+  select,
+  textarea,
+  button {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* An identifier is a code, not prose. */
+  .font-mono,
+  code,
+  kbd {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-feature-settings: 'zero' 1; /* slashed zero — 0 vs O matters on a serial */
+  }
+
+  /* Keyboard focus must be visible; the app is used with a scanner and a
+     keyboard as often as a mouse. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

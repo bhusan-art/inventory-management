@@ -59,6 +59,21 @@ export class DomainError extends AppError {
   }
 }
 
+/**
+ * Rate limiting, as an error rather than a special case.
+ *
+ * express-rate-limit's `message` option writes its own response and never
+ * reaches the error handler, so a 429 was the one reply in the system with no
+ * top-level `code` — the exact defect Phase 8 fixed everywhere else. A client
+ * matching on `code === 'RATE_LIMITED'`, which is what the contract tells it to
+ * do, got `undefined` and fell through to a generic failure.
+ */
+export class RateLimitedError extends AppError {
+  constructor(message = 'Too many requests. Try again shortly.', code = 'RATE_LIMITED') {
+    super(message, { statusCode: 429, code });
+  }
+}
+
 export class ServiceUnavailableError extends AppError {
   constructor(message = 'Service temporarily unavailable', code = 'SERVICE_UNAVAILABLE') {
     super(message, { statusCode: 503, code });

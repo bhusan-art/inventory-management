@@ -3,7 +3,6 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 
 import env from './config/env.js';
@@ -11,6 +10,7 @@ import logger from './config/logger.js';
 import requestContext from './middleware/requestContext.js';
 import errorHandler from './middleware/errorHandler.js';
 import notFound from './middleware/notFound.js';
+import { globalLimiter } from './middleware/rateLimit.js';
 import v1Routes from './routes/v1/index.js';
 
 export function createApp() {
@@ -49,18 +49,9 @@ export function createApp() {
     );
   }
 
-  // Global ceiling. Tighter per-route limits are added in Phase 1 on the auth
-  // endpoints, where the threat is credential stuffing rather than volume.
-  app.use(
-    '/api',
-    rateLimit({
-      windowMs: 60_000,
-      limit: env.isTest ? 100_000 : 300,
-      standardHeaders: 'draft-7',
-      legacyHeaders: false,
-      message: { success: false, message: 'Too many requests', errors: [{ code: 'RATE_LIMITED' }] },
-    }),
-  );
+  // Global ceiling. Tighter per-route limits sit on the auth endpoints, where
+  // the threat is credential stuffing rather than volume.
+  app.use('/api', globalLimiter());
 
   app.use('/api/v1', v1Routes);
 

@@ -106,6 +106,77 @@ const ENDPOINTS = [
   { name: 'list dispatch notes', method: 'get',  path: '/api/v1/dispatch-notes',                    requires: ['VIEW_DISPATCH_NOTE'] },
   { name: 'dispatch goods',      method: 'post', path: '/api/v1/dispatch-notes',                    requires: ['CREATE_DISPATCH'], body: {} },
   { name: 'cancel dispatch',     method: 'post', path: '/api/v1/dispatch-notes/:masterId/cancel',   requires: ['CANCEL_DISPATCH'], body: { reason: 'test' } },
+
+  // ---- Phase 8: warranty and service ----
+  { name: 'list warranties',       method: 'get',  path: '/api/v1/warranties',                       requires: ['VIEW_WARRANTY'] },
+  { name: 'warranty summary',      method: 'get',  path: '/api/v1/warranties/summary',               requires: ['VIEW_WARRANTY'] },
+  { name: 'warranty by serial',    method: 'get',  path: '/api/v1/warranties/serial/:masterId',      requires: ['VIEW_WARRANTY'] },
+  { name: 'view a warranty',       method: 'get',  path: '/api/v1/warranties/:masterId',             requires: ['VIEW_WARRANTY'] },
+  // Voiding and extending both change entitlement, so both need VOID_WARRANTY
+  // — a role with UPDATE_WARRANTY alone must still be denied here.
+  { name: 'void a warranty',       method: 'post', path: '/api/v1/warranties/:masterId/void',        requires: ['VOID_WARRANTY'], body: { reason: 'matrix probe' } },
+  { name: 'extend a warranty',     method: 'post', path: '/api/v1/warranties/:masterId/extend',      requires: ['VOID_WARRANTY'], body: { additionalMonths: 6, reason: 'matrix probe' } },
+  { name: 'list service requests', method: 'get',  path: '/api/v1/service-requests',                 requires: ['VIEW_SERVICE_REQUEST'] },
+  { name: 'raise a ticket',        method: 'post', path: '/api/v1/service-requests',                 requires: ['CREATE_SERVICE_REQUEST'], body: {} },
+  { name: 'tickets by serial',     method: 'get',  path: '/api/v1/service-requests/serial/:masterId', requires: ['VIEW_SERVICE_REQUEST'] },
+  { name: 'view a ticket',         method: 'get',  path: '/api/v1/service-requests/:masterId',       requires: ['VIEW_SERVICE_REQUEST'] },
+  { name: 'assign a ticket',       method: 'post', path: '/api/v1/service-requests/:masterId/assign', requires: ['ASSIGN_SERVICE_REQUEST'], body: {} },
+  // Working a ticket is the engineer's job, separate from assigning it: Sales
+  // can assign but must not receive, repair, replace or close.
+  { name: 'receive for service',   method: 'post', path: '/api/v1/service-requests/:masterId/receive', requires: ['WORK_SERVICE_REQUEST'], body: {} },
+  { name: 'progress a ticket',     method: 'post', path: '/api/v1/service-requests/:masterId/status',  requires: ['WORK_SERVICE_REQUEST'], body: {} },
+  { name: 'return a repaired unit',method: 'post', path: '/api/v1/service-requests/:masterId/return',  requires: ['WORK_SERVICE_REQUEST'], body: {} },
+  { name: 'replace a unit',        method: 'post', path: '/api/v1/service-requests/:masterId/replace', requires: ['WORK_SERVICE_REQUEST'], body: {} },
+  { name: 'close a ticket',        method: 'post', path: '/api/v1/service-requests/:masterId/close',   requires: ['WORK_SERVICE_REQUEST'], body: {} },
+
+  // ---- Phase 9: returns ----
+  { name: 'list customer returns',  method: 'get',  path: '/api/v1/customer-returns',                        requires: ['VIEW_RETURN'] },
+  { name: 'disposition queue',      method: 'get',  path: '/api/v1/customer-returns/disposition-queue',      requires: ['VIEW_RETURN'] },
+  { name: 'returns by serial',      method: 'get',  path: '/api/v1/customer-returns/serial/:masterId',       requires: ['VIEW_RETURN'] },
+  { name: 'view a customer return', method: 'get',  path: '/api/v1/customer-returns/:masterId',              requires: ['VIEW_RETURN'] },
+  { name: 'raise a customer return',method: 'post', path: '/api/v1/customer-returns',                        requires: ['CREATE_RETURN'], body: {} },
+  // Authorising a return commits the company to taking goods back, so it is
+  // not part of CREATE_RETURN: the person who raises one must not approve it.
+  { name: 'approve a return',       method: 'post', path: '/api/v1/customer-returns/:masterId/status',       requires: ['APPROVE_RETURN'], body: {} },
+  // Receiving is where stock actually changes, so it sits with the people who
+  // handle goods rather than the people who handle paperwork.
+  { name: 'receive returned goods', method: 'post', path: '/api/v1/customer-returns/:masterId/receive',      requires: ['CREATE_GRN'], body: {} },
+  // The one that can quietly put a faulty unit back on the shelf.
+  { name: 'set a disposition',      method: 'post', path: '/api/v1/customer-returns/:masterId/disposition',  requires: ['SET_DISPOSITION'], body: {} },
+  { name: 'escalate to vendor',     method: 'post', path: '/api/v1/customer-returns/:masterId/vendor-return', requires: ['CREATE_RETURN'], body: {} },
+  { name: 'list vendor returns',    method: 'get',  path: '/api/v1/vendor-returns',                          requires: ['VIEW_RETURN'] },
+  { name: 'view a vendor return',   method: 'get',  path: '/api/v1/vendor-returns/:masterId',                requires: ['VIEW_RETURN'] },
+  { name: 'draft a vendor return',  method: 'post', path: '/api/v1/vendor-returns',                          requires: ['CREATE_RETURN'], body: {} },
+  { name: 'approve a vendor return',method: 'post', path: '/api/v1/vendor-returns/:masterId/status',         requires: ['APPROVE_RETURN'], body: {} },
+  { name: 'send to vendor',         method: 'post', path: '/api/v1/vendor-returns/:masterId/send',           requires: ['APPROVE_RETURN'], body: {} },
+
+  // ---- Phase 10: documents and dashboard ----
+  // The list and upload routes need a well-formed parent, so they use the
+  // matrix vendor as a VENDOR-typed parent: a role without VIEW_VENDOR is then
+  // refused by the parent check as well as by VIEW_DOCUMENT, which is the
+  // layering the feature is built on.
+  { name: 'list documents',    method: 'get',    path: '/api/v1/documents?entityType=VENDOR&entityId=:masterId', requires: ['VIEW_DOCUMENT', 'VIEW_VENDOR'] },
+  { name: 'storage summary',   method: 'get',    path: '/api/v1/documents/storage-summary',                      requires: ['VIEW_DOCUMENT'] },
+  { name: 'download document', method: 'get',    path: '/api/v1/documents/:masterId/download',                   requires: ['VIEW_DOCUMENT'] },
+  { name: 'upload a document', method: 'post',   path: '/api/v1/documents',                                      requires: ['CREATE_DOCUMENT'], body: {} },
+  { name: 'delete a document', method: 'delete', path: '/api/v1/documents/:masterId',                            requires: ['DELETE_DOCUMENT'] },
+
+  // ---- Phase 11: reports and exports ----
+  // VIEW_REPORTS opens the menu; each report then checks its own permission,
+  // so holding this alone reveals nothing about any particular module.
+  { name: 'list reports',       method: 'get', path: '/api/v1/reports',                          requires: ['VIEW_REPORTS'] },
+  { name: 'run a report',       method: 'get', path: '/api/v1/reports/stock-on-hand',            requires: ['VIEW_REPORTS'] },
+  // Reading on screen and taking a copy away are separate decisions.
+  { name: 'export a report',    method: 'get', path: '/api/v1/reports/stock-on-hand/export',     requires: ['EXPORT_DATA'] },
+
+  // ---- Phase 12: the audit trail ----
+  // Gated on the ROUTER rather than per route, which is why the OpenAPI walker
+  // had to learn about `router.use(...)`. Only SUPER_ADMIN and ADMIN hold it:
+  // the trail records who did what, so reading it is itself a privileged act.
+  { name: 'list audit log',     method: 'get', path: '/api/v1/audit-logs',                       requires: ['VIEW_AUDIT_LOGS'] },
+  { name: 'audit summary',      method: 'get', path: '/api/v1/audit-logs/summary',               requires: ['VIEW_AUDIT_LOGS'] },
+  { name: 'audit vocabulary',   method: 'get', path: '/api/v1/audit-logs/vocabulary',            requires: ['VIEW_AUDIT_LOGS'] },
+  { name: 'record history',     method: 'get', path: '/api/v1/audit-logs/Vendor/:masterId',      requires: ['VIEW_AUDIT_LOGS'] },
 ];
 
 const DENIED_STATUSES = [401, 403];
@@ -141,6 +212,27 @@ beforeEach(async () => {
   const vendor = await Vendor.create({
     tenantId: company._id, vendorName: 'Matrix Vendor', vendorCode: 'V-MATRIX',
   });
+
+  /**
+   * An actor who can READ users but not their contact details.
+   *
+   * No system role is that shape — every role holding VIEW_USER also holds
+   * VIEW_CONTACT_DETAILS — so the restricted-field tests below used
+   * INVENTORY_MANAGER on the strength of a comment saying it "can read users".
+   * It cannot: it holds neither permission, so those requests were refused by
+   * the permission gate and never reached the restricted-field machinery at
+   * all. The tests asserted a shape no role could satisfy and failed with
+   * PERMISSION_DENIED, which looks like the right kind of refusal and is not.
+   *
+   * Built from ADMIN minus one permission, using the deny list the resolver
+   * already supports (role ∪ grants − denies). That also exercises denies,
+   * which nothing else did.
+   */
+  await createUser({
+    company, role: roles.ADMIN, email: 'nocontact@test.local',
+    overrides: { permissionDenies: ['VIEW_CONTACT_DETAILS'] },
+  });
+  tokens.NO_CONTACT = (await signIn('nocontact@test.local')).accessToken;
 
   context = {
     company, roles, tokens,
@@ -196,10 +288,11 @@ describe('restricted field enforcement', () => {
   it('omits the phone number for roles without VIEW_CONTACT_DETAILS', async () => {
     await User.updateOne({ email: 'target@test.local' }, { phone: '+919999999999' });
 
-    // Inventory Manager can read users but not contact details.
+    // An Admin with VIEW_CONTACT_DETAILS denied: can read the user record,
+    // must not see the phone number on it.
     const res = await request(app)
       .get(`/api/v1/users/${context.targetUserId}`)
-      .set(auth(context.tokens.INVENTORY_MANAGER));
+      .set(auth(context.tokens.NO_CONTACT));
 
     expect(res.status).toBe(200);
     expect('phone' in res.body.data).toBe(false);
@@ -222,16 +315,19 @@ describe('restricted field enforcement', () => {
     // empty result, hiding exactly the behaviour worth noticing.
     const res = await request(app)
       .get('/api/v1/users?sort=phone:asc')
-      .set(auth(context.tokens.INVENTORY_MANAGER));
+      .set(auth(context.tokens.NO_CONTACT));
 
     expect(res.status).toBe(403);
+    // Specifically this code, not merely a 403: the distinction between "you
+    // cannot read users" and "you cannot sort by that field" is the whole
+    // point of the restricted-field registry.
     expect(res.body.errors[0].code).toBe('RESTRICTED_FIELD_ACCESS_DENIED');
   });
 
   it('rejects filtering by a restricted field', async () => {
     const res = await request(app)
       .get('/api/v1/users?filter[phone]=999')
-      .set(auth(context.tokens.INVENTORY_MANAGER));
+      .set(auth(context.tokens.NO_CONTACT));
 
     expect(res.status).toBe(403);
   });

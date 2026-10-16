@@ -5,6 +5,7 @@ import { STATUS_BUCKET, SERIAL_TRANSITIONS } from '../../constants/inventory.js'
 import { warehouseScopeFilter } from '../shared/scopeService.js';
 import { NotFoundError } from '../../utils/errors.js';
 import { escapeRegex } from '../shared/crudFactory.js';
+import { toObjectId } from '../../utils/objectId.js';
 
 export async function listSerials(actor, query) {
   const filter = { tenantId: actor.tenantId };
@@ -62,7 +63,8 @@ export async function findBySerialNumber(actor, serialNumber) {
     .populate('warehouse', 'name code')
     .populate('customer', 'customerName customerCode')
     .populate('vendor', 'vendorName vendorCode')
-    .populate('grn', 'grnNumber receivedDate');
+    .populate('grn', 'grnNumber receivedDate')
+    .populate('currentWarranty', 'warrantyNumber endDate durationMonths state');
 
   if (!serial) throw new NotFoundError(`No unit found with serial number ${serialNumber}`, 'SERIAL_NOT_FOUND');
 
@@ -113,7 +115,10 @@ export async function getHistory(actor, id, { page = 1, limit = 50 } = {}) {
 export async function auditSerialConsistency(tenantId, product) {
   const [byStatus, inventory] = await Promise.all([
     SerialNumber.aggregate([
-      { $match: { tenantId, product } },
+      // Both cast: an aggregation $match gets no schema casting, so string ids
+      // match nothing. This audit compared an EMPTY serial set against real
+      // inventory rows — a consistency check that could not detect anything.
+      { $match: { tenantId: toObjectId(tenantId), product: toObjectId(product) } },
       { $group: { _id: { warehouse: '$warehouse', status: '$status' }, count: { $sum: 1 } } },
     ]),
     Inventory.find({ tenantId, product }),

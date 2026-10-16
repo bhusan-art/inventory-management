@@ -69,6 +69,29 @@ export async function connectDatabase({ retries = 10, delayMs = 3000 } = {}) {
         serverSelectionTimeoutMS: 5000,
         maxPoolSize: 20,
         minPoolSize: 2,
+        /**
+         * EVERY write waits for majority, not just the ones in transactions.
+         *
+         * `withTransaction` opens its transactions with
+         * `readConcern: snapshot`, which reads from the majority-committed
+         * snapshot. A plain write — `ServiceRequest.create`, a `save()` outside
+         * a transaction — returned as soon as the primary had it, BEFORE that
+         * write was majority-committed. A transaction opened in the next
+         * instant therefore read a snapshot that did not contain it.
+         *
+         * The symptom is a lookup failing for a record that demonstrably
+         * exists: raise a ticket, immediately replace the unit, and
+         * `replaceUnit` reports "Service request not found". Same for "Vendor
+         * not found" and "GRN not found" moments after creating them. It is a
+         * race, so it is intermittent, and it gets worse the slower the disk —
+         * which is why it showed up under Docker on Windows and not before.
+         *
+         * Making majority the default closes the window: a write does not
+         * return until the snapshot a transaction would read already holds it.
+         * On a single-node replica set "majority" is that one node, so the cost
+         * is a flush, not a round trip.
+         */
+        writeConcern: { w: 'majority' },
       });
       await assertReplicaSet();
       logger.info('MongoDB connected');
